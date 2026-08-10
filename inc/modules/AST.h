@@ -6,12 +6,12 @@
 typedef struct Expr expr_s;
 
 // Literal
-typedef enum Literal_type {
-    LITERAL_NUMBER,
-    LITERAL_STRING,
-    LITERAL_NULL,
-    LITERAL_BOOLEAN
-} literal_type_e;
+typedef enum Expr_literal_type {
+    EXPR_LITERAL_NUMBER,
+    EXPR_LITERAL_STRING,
+    EXPR_LITERAL_NULL,
+    EXPR_LITERAL_BOOLEAN
+} expr_literal_type_e;
 
 typedef struct Literal_expr {
     union Literal_u {
@@ -19,7 +19,7 @@ typedef struct Literal_expr {
         char* string;
         int boolean;
     } payload;
-    literal_type_e type;
+    expr_literal_type_e type;
 } literal_expr_s;
 
 
@@ -45,10 +45,10 @@ typedef struct Binary_expr {
 
 // Expression
 typedef enum Expr_type {
-    LITERAL,
-    GROUPING,
-    UNARY,
-    BINARY,
+    EXPR_LITERAL,
+    EXPR_GROUPING,
+    EXPR_UNARY,
+    EXPR_BINARY,
 } expr_type_e;
 
 // General expression struct
@@ -61,5 +61,22 @@ typedef struct Expr {
     } expression;
     expr_type_e type;
 } expr_s;
+
+// Constructors
+
+expr_s* expr_literal_num_initialize(double val);
+expr_s* expr_literal_str_initialize(char* val);
+expr_s* expr_literal_bool_initialize(int val);
+expr_s* expr_literal_null_initialize(void);
+
+expr_s* expr_unary_initialize(token_s* op, expr_s* expr);
+
+expr_s* expr_binary_initialize(expr_s* left,token_s* op, expr_s* right);
+
+expr_s* expr_grouping_initialize(expr_s* expr);
+
+// Destructors
+
+void expr_destroy(expr_s** expr);
 
 #endif
