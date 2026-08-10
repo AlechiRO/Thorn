@@ -31,14 +31,14 @@ typedef struct Grouping_expr {
 
 //Unary
 typedef struct Unary_expr {
-    token_s* op;
-    expr_s* expr;
+    const token_s* op;
+    expr_s* right;
 } unary_expr_s;
 
 //Binary
 typedef struct Binary_expr {
     expr_s* left;
-    token_s* op;
+    const token_s* op;
     expr_s* right;
 } binary_expr_s;
 
@@ -69,11 +69,11 @@ expr_s* expr_literal_str_initialize(char* val);
 expr_s* expr_literal_bool_initialize(int val);
 expr_s* expr_literal_null_initialize(void);
 
-expr_s* expr_unary_initialize(token_s* op, expr_s* expr);
+expr_s* expr_unary_initialize(const token_s* op, expr_s* right);
 
-expr_s* expr_binary_initialize(expr_s* left,token_s* op, expr_s* right);
+expr_s* expr_binary_initialize(expr_s* left, const token_s* op, expr_s* right);
 
-expr_s* expr_grouping_initialize(expr_s* expr);
+expr_s* expr_grouping_initialize(expr_s* e);
 
 // Destructors
 

@@ -27,7 +27,7 @@ Free the memory allocated for the literal struct
 void destroy_literal(literal_s** literal) {
     if((*literal) == NULL || literal == NULL) {
         fprintf(stderr, "ERROR: Invalid token pointer!\n");
-        exit(EXIT_FAILURE);
+        return;
     }
     free(*literal);
     *literal = NULL;
@@ -60,7 +60,7 @@ Free the memory allocated for the token struct and litteral struct field
 void destroy_token(token_s** token) {
     if((*token) == NULL || token == NULL) {
         fprintf(stderr, "ERROR: Invalid token pointer!\n");
-        exit(EXIT_FAILURE);
+        return;
     }
     literal_s** literal = &((*token)->literal);
 
