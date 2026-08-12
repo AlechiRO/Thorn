@@ -2,7 +2,7 @@
 #define LEXER_UTIL_h
 
 #include "token.h"
-#include "lexer_generics.h"
+#include "generics.h"
 
 typedef struct Lexer_context lexer_context_s;
 

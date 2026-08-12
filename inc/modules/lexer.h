@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "lexer_generics.h"
+#include "generics.h"
 #include "lexer_util.h"
 #include "token.h"
 

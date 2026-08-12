@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #include "printer.h"
 #include "error.h"
+
+
 
 /*
 Report an error
@@ -8,7 +11,7 @@ Report an error
 @param where
 @param message Error message
 */
-void report(int line, char* where, char* message) {
+void report(int line, const char* where, const char* message) {
     printf("[line %d] Error %s: %s\n", line, where, message);
 }
 
@@ -17,7 +20,7 @@ Catch syntax error
 @param lctx Pointer to lexer context struct
 @param message Error message
 */
-void error(lexer_context_s* lctx, char* message) {
+void error(lexer_context_s* lctx, const char* message) {
     report(lctx->line_number, "", message);
     lctx->had_error = 1;
 }
@@ -32,4 +35,24 @@ int check_error(lexer_context_s* lctx) {
     lctx->had_error = 0;
     return error;
 }
+
+
+
+void parse_error(parser_context_s* pctx, token_s* token, const char* message) {
+    handle_parse_error(token, message);
+    pctx->had_error = 1;
+    // Unwind call stack
+    longjmp(pctx->panic_jmp, 1);
+}
+
+void handle_parse_error(token_s* token, const char* message) {
+    if(token->type == TOKEN_EOF) 
+        report(token->line, " at end", message);
+    else {
+        char location[256];
+        snprintf(location, sizeof(location), " at '%.240s'", token->lexeme);
+        report(token->line, location, message);
+    } 
+}
+
 
