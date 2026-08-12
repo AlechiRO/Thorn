@@ -1,4 +1,4 @@
-# Son-of-Zaratan
+# Thorn
 - Thorn is a POSIX-like Unix shell interpreter from scratch in C using principles found in “Crafting Interpreters” by Robert Nystrom.
 # Features and Language Semantics
 - You can find the full list of features and language specifications by following this link: https://app.notion.com/p/The-Thorn-language-31f3dd8ecf208085b01ae307fc2726b7?pvs=28
