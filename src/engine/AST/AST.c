@@ -23,7 +23,7 @@ Expression number literal constructor
 @param val Double value of the literal
 @return Pointer to an expr struct
 */
-expr_s* expr_literal_num_initialize(double val) {
+expr_s* initialize_expr_literal_num(double val) {
     expr_s* expr = expr_alloc(EXPR_LITERAL); 
     expr->expression.literal = (literal_expr_s) {
         .payload.number = val, 
@@ -38,7 +38,7 @@ Expression string literal constructor
 @param val String value of the literal
 @return Pointer to an expr struct
 */
-expr_s* expr_literal_str_initialize(char* val) {
+expr_s* initialize_expr_literal_str(char* val) {
     expr_s* expr = expr_alloc(EXPR_LITERAL); 
     expr->expression.literal = (literal_expr_s) {
         .payload.string = val, 
@@ -53,7 +53,7 @@ Expression boolean literal constructor
 @param val Boolean value of the literal
 @return Pointer to an expr struct
 */
-expr_s* expr_literal_bool_initialize(int val) {
+expr_s* initialize_expr_literal_bool(int val) {
     expr_s* expr = expr_alloc(EXPR_LITERAL); 
     expr->expression.literal = (literal_expr_s) {
         .payload.boolean = val, 
@@ -67,7 +67,7 @@ expr_s* expr_literal_bool_initialize(int val) {
 Expression null literal constructor
 @return Pointer to an expr struct
 */
-expr_s* expr_literal_null_initialize(void) {
+expr_s* initialize_expr_literal_null(void) {
     expr_s* expr = expr_alloc(EXPR_LITERAL); 
     expr->expression.literal = (literal_expr_s) { 
         .type = EXPR_LITERAL_NULL
@@ -82,7 +82,7 @@ Expression unary constructor
 @param right Pointer to the right expr struct
 @return Pointer to an expr struct
 */
-expr_s* expr_unary_initialize(const token_s* op, expr_s* right) {
+expr_s* initialize_expr_unary(const token_s* op, expr_s* right) {
     expr_s* expr = expr_alloc(EXPR_UNARY); 
     expr->expression.unary = (unary_expr_s) { 
         .op = op,
@@ -99,7 +99,7 @@ Expression binary constructor
 @param right Pointer to the right expr struct
 @return Pointer to an expr struct
 */
-expr_s* expr_binary_initialize(expr_s* left, const token_s* op, expr_s* right) {
+expr_s* initialize_expr_binary(expr_s* left, const token_s* op, expr_s* right) {
     expr_s* expr = expr_alloc(EXPR_BINARY); 
     expr->expression.binary = (binary_expr_s) { 
         .left = left,
@@ -116,7 +116,7 @@ Expression grouping constructor
 @param e Pointer to the expression in the grouping
 @return Pointer to an expr struct
 */
-expr_s* expr_grouping_initialize(expr_s* e) {
+expr_s* initialize_expr_grouping(expr_s* e) {
     expr_s* expr = expr_alloc(EXPR_GROUPING); 
     expr->expression.grouping = (grouping_expr_s) { 
         .expr = e
@@ -130,7 +130,7 @@ expr_s* expr_grouping_initialize(expr_s* e) {
 Recursive expression destructor
 @param expr Pointer to the address of an expression struct
 */
-void expr_destroy(expr_s** expr) {
+void destroy_expr(expr_s** expr) {
     if(expr == NULL || (*expr) == NULL) {
         return;
     }
@@ -139,14 +139,14 @@ void expr_destroy(expr_s** expr) {
         case EXPR_LITERAL : 
             break;
         case EXPR_GROUPING :
-            expr_destroy(&(e->expression.grouping.expr));
+            destroy_expr(&(e->expression.grouping.expr));
             break;
         case EXPR_UNARY :
-            expr_destroy(&(e->expression.unary.right));
+            destroy_expr(&(e->expression.unary.right));
             break;
         case EXPR_BINARY :
-            expr_destroy(&(e->expression.binary.left));
-            expr_destroy(&(e->expression.binary.right));
+            destroy_expr(&(e->expression.binary.left));
+            destroy_expr(&(e->expression.binary.right));
             break;
         default:
             break;

@@ -29,9 +29,7 @@ int main(void) {
             destroy_lexer_context(&lctx);
             break;
         }
-        else 
-            destroy_lexer_context(&lctx);  
-            /* while(a<b){a++} */
+        destroy_lexer_context(&lctx);  
     }
     destroy_line(&line);
     string_token_type_hashmap_destroy(&token_map);

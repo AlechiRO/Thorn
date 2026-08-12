@@ -64,19 +64,19 @@ typedef struct Expr {
 
 // Constructors
 
-expr_s* expr_literal_num_initialize(double val);
-expr_s* expr_literal_str_initialize(char* val);
-expr_s* expr_literal_bool_initialize(int val);
-expr_s* expr_literal_null_initialize(void);
+expr_s* initialize_expr_literal_num(double val);
+expr_s* initialize_expr_literal_str(char* val);
+expr_s* initialize_expr_literal_bool(int val);
+expr_s* initialize_expr_literal_null(void);
 
-expr_s* expr_unary_initialize(const token_s* op, expr_s* right);
+expr_s* initialize_expr_unary(const token_s* op, expr_s* right);
 
-expr_s* expr_binary_initialize(expr_s* left, const token_s* op, expr_s* right);
+expr_s* initialize_expr_binary(expr_s* left, const token_s* op, expr_s* right);
 
-expr_s* expr_grouping_initialize(expr_s* e);
+expr_s* initialize_expr_grouping(expr_s* e);
 
 // Destructors
 
-void expr_destroy(expr_s** expr);
+void destroy_expr(expr_s** expr);
 
 #endif
