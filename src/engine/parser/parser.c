@@ -2,67 +2,13 @@
 #include <stdlib.h>
 #include <parser.h>
 #include "error.h"
+#include "parser_util.h"
 
 
-parser_context_s* initialize_parser_context(token_list* tokens) {
-    parser_context_s* pctx = malloc(sizeof(parser_context_s));
-
-    if(pctx == NULL) {
-        fprintf(stderr, "FATAL: Could not allocate memory for parser context!\n");
-        exit(EXIT_FAILURE);
-    }
-    pctx->tokens = tokens;
-    pctx->current = 0;
-    pctx->had_error = 0;
-
-    return pctx;
-}
-
-
-token_s* p_peek(parser_context_s* pctx) {
-    return token_list_get(pctx->tokens, pctx->current);
-}
-
-token_s* p_previous(parser_context_s* pctx) {
-    return token_list_get(pctx->tokens, pctx->current > 0 ? pctx->current - 1 : 0);
-}
-
-int p_is_at_end(parser_context_s* pctx) {
-    return p_peek(pctx)->type == TOKEN_EOF;
-}
-
-token_s* p_advance(parser_context_s* pctx) {
-    if(!p_is_at_end(pctx))
-        pctx->current++;
-    return p_previous(pctx);
-}
-
-int p_check(parser_context_s* pctx, token_type_e type) {
-    if(p_is_at_end(pctx)) 
-        return 0;
-    return p_peek(pctx)->type == type;
-}
-
-int p_match(parser_context_s* pctx,token_type_e types[], uint32_t size) {
-    for(uint32_t i = 0; i < size; i++) {
-        if(p_check(pctx, types[i])) {
-            p_advance(pctx);
-            return 1;
-        }
-    }
-    return 0;
-}
 
 
 expr_s* expression(parser_context_s* pctx) {
     return equality(pctx);
-}
-
-token_s* consume(parser_context_s* pctx, token_type_e type, const char* message) {
-    if(p_check(pctx, type))
-        return p_advance(pctx);
-    parse_error(pctx, p_peek(pctx), message);
-    return NULL;
 }
 
 expr_s* primary(parser_context_s* pctx) {

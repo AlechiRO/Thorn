@@ -1,0 +1,1 @@
+add_library(parser_util_logic OBJECT parser_util.c)
