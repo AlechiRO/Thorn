@@ -1,0 +1,1 @@
+add_library(arena_logic OBJECT arena.c)
