@@ -92,7 +92,7 @@ Provides the smalles multiple of 16 larger than the provided size
 @return 16 byte aligned size
 */
 size_t align_16_bytes(size_t size) {
-    if(size == 0) 
+    if(size <= 0) 
         return 0;
     return (((size-1)>>4)<<4)+16;
 }
