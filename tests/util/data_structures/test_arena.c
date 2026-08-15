@@ -14,13 +14,13 @@ arena_s* arena;
 Helper function to initialize arena to default size
 */
 static void clean_up(void) {
-    arena = initialize_arena(0);
+    destroy_arena(&arena);
 }
 /*
 Helper function to free the memory used for arena
 */
 static void set_up(void) {
-    destroy_arena(&arena);
+    arena = initialize_arena(0);
 }
 
 /* 
@@ -107,6 +107,11 @@ void test_destroy_arena_NULL(void) {
     CU_ASSERT_PTR_NULL(arena);
 }
 
+void test_alloc_arena_small(void) {
+    void* object = alloc_arena(arena, 18 * 16 + 4);
+    CU_ASSERT_EQUAL(arena->head->offset, 19 * 16);
+    CU_ASSERT_PTR_NOT_NULL(object);
+}
 
 int main(void) {
 
@@ -141,7 +146,9 @@ int main(void) {
     
     /* Alloc_arena suite */
     CU_pSuite alloc_arena_suite = create_suite("alloc_arena suite", set_up, clean_up);
-    
+    CU_add_test(alloc_arena_suite, "alloc arena small", test_alloc_arena_small); 
+
+
     // run the tests
     CU_basic_run_tests();
 
