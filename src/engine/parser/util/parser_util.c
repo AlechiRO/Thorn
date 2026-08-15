@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <parser.h>
+#include "parser.h"
 #include "error.h"
 
 parser_context_s* initialize_parser_context(token_list* tokens) {
@@ -13,10 +13,19 @@ parser_context_s* initialize_parser_context(token_list* tokens) {
     pctx->tokens = tokens;
     pctx->current = 0;
     pctx->had_error = 0;
-
+    pctx->arena = initialize_arena(DEFAULT_ARENA_CHUNK_SIZE);
     return pctx;
 }
 
+void destroy_parser_context(parser_context_s** pctx) {
+    if(pctx == NULL || (*pctx) == NULL) {
+        fprintf(stderr, "INFO: Pointer provided to parser context destructor was null!\n");
+        return;
+    }
+    destroy_arena(&((*pctx)->arena));
+    free(*pctx);
+    (*pctx) = NULL;
+}
 
 token_s* p_peek(parser_context_s* pctx) {
     return token_list_get(pctx->tokens, pctx->current);

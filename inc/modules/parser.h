@@ -10,6 +10,7 @@ typedef struct Parser_context {
     token_list* tokens;
     uint32_t current;
     int had_error;
+    arena_s* arena;
     jmp_buf panic_jmp;
 } parser_context_s;
 
