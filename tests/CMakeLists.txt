@@ -99,6 +99,18 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
         ${CMAKE_SOURCE_DIR}/inc/modules
     )
 
+    # Arena test executable
+
+    add_executable(ARENA_TEST_DRIVER 
+        ${ARENA_TEST_SOURCE}
+        $<TARGET_OBJECTS:arena_logic>
+    )
+    target_link_libraries(ARENA_TEST_DRIVER PRIVATE ${CUNIT_LIBRARIES})
+    target_include_directories(ARENA_TEST_DRIVER PRIVATE 
+        ${CUNIT_INCLUDE_DIRS} 
+        ${CMAKE_SOURCE_DIR}/inc/modules
+    )
+
     # Lexer test executable
 
     add_executable(LEXER_TEST_DRIVER 
@@ -124,6 +136,7 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
     add_test(NAME test_string_util COMMAND STRING_UTIL_TEST_DRIVER)
     add_test(NAME test_lexer COMMAND LEXER_TEST_DRIVER)
     add_test(NAME test_hashmap COMMAND HASHMAP_TEST_DRIVER)
+    add_test(NAME test_arena COMMAND ARENA_TEST_DRIVER)
 
 else()
     message(WARNING "CUnit not found!")

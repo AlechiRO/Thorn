@@ -2,7 +2,6 @@
 #include "arena.h"
 
 
-size_t align_16_bytes(size_t size);
 /*
 Arena Chunk Constructor
 @param capacity Chunk capacity

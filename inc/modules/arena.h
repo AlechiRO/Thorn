@@ -25,4 +25,7 @@ arena_s* initialize_arena(size_t capacity);
 void* alloc_arena(arena_s* arena, size_t size);
 void reset_arena(arena_s* arena);
 void destroy_arena(arena_s** arena); 
+arena_chunk_s* initialize_arena_chunk(size_t capacity);
+void destroy_arena_chunk(arena_chunk_s** chunk);
+size_t align_16_bytes(size_t size);
 #endif
