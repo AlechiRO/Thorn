@@ -45,6 +45,68 @@ void test_align_16_bytes(void) {
     CU_ASSERT_EQUAL(align_16_bytes(160), 160);
 }
 
+void test_initialize_arena_chunk_aligned(void) {
+    arena_chunk_s* chunk = initialize_arena_chunk(1024);
+    CU_ASSERT_PTR_NOT_NULL(chunk);
+    CU_ASSERT_PTR_NULL(chunk->next);
+    CU_ASSERT_EQUAL(chunk->capacity, 1024);
+    CU_ASSERT_EQUAL(chunk->offset, 0);
+    destroy_arena_chunk(&chunk);
+}
+
+void test_initialize_arena_chunk_not_aligned(void) {
+    arena_chunk_s* chunk = initialize_arena_chunk(506);
+    CU_ASSERT_PTR_NOT_NULL(chunk);
+    CU_ASSERT_PTR_NULL(chunk->next);
+    CU_ASSERT_EQUAL(chunk->capacity, 512);
+    CU_ASSERT_EQUAL(chunk->offset, 0);
+    destroy_arena_chunk(&chunk);
+}
+
+void test_destroy_arena_chunk(void) {
+    arena_chunk_s* chunk = initialize_arena_chunk(1024);
+    destroy_arena_chunk(&chunk);
+    CU_ASSERT_PTR_NULL(chunk);
+}
+
+void test_destroy_arena_chunk_NULL(void) {
+    arena_chunk_s* chunk = NULL;
+    destroy_arena_chunk(&chunk);
+    CU_ASSERT_PTR_NULL(chunk);
+}
+
+void test_initialize_arena_default(void) {
+    arena = initialize_arena(1024);
+    CU_ASSERT_PTR_NOT_NULL(arena);
+    arena_chunk_s* head = arena->head;
+    CU_ASSERT_PTR_NULL(head->next);
+    CU_ASSERT_PTR_NOT_NULL(head);
+    CU_ASSERT_EQUAL(head->capacity, 64 * 1024);
+    CU_ASSERT_EQUAL(head->offset, 0); 
+}
+
+void test_initialize_arena_more_than_default(void) {
+    arena = initialize_arena(128 * 1024);
+    CU_ASSERT_PTR_NOT_NULL(arena);
+    arena_chunk_s* head = arena->head;
+    CU_ASSERT_PTR_NULL(head->next);
+    CU_ASSERT_PTR_NOT_NULL(head);
+    CU_ASSERT_EQUAL(head->capacity, 128 * 1024);
+    CU_ASSERT_EQUAL(head->offset, 0); 
+}
+
+void test_destroy_arena(void) {
+    arena = initialize_arena(1024);
+    destroy_arena(&arena);
+    CU_ASSERT_PTR_NULL(arena);
+}
+
+void test_destroy_arena_NULL(void) {
+    arena = NULL;
+    destroy_arena(&arena);
+    CU_ASSERT_PTR_NULL(arena);
+}
+
 
 int main(void) {
 
@@ -57,8 +119,29 @@ int main(void) {
     CU_add_test(align_16_bytes_suite, "align zero bytes", test_align_zero_bytes);
     CU_add_test(align_16_bytes_suite, "align to 16 bytes", test_align_16_bytes);
 
+    /* Initialize_arena_chunk suite */
+    CU_pSuite initialize_arena_chunk_suite = create_suite("initialize_arena_chunk suite", NULL, NULL);
+    CU_add_test(initialize_arena_chunk_suite, "initialize arena chunk aligned", test_initialize_arena_chunk_aligned);
+    CU_add_test(initialize_arena_chunk_suite, "initialize arena chunk not aligned", test_initialize_arena_chunk_not_aligned);
 
+    /* Destroy_arena_chunk suite */
+    CU_pSuite destroy_arena_chunk_suite = create_suite("destroy_arena_chunk suite", NULL, NULL);
+    CU_add_test(destroy_arena_chunk_suite, "destroy arena chunk", test_destroy_arena_chunk);
+    CU_add_test(destroy_arena_chunk_suite, "destroy arena chunk NULL", test_destroy_arena_chunk_NULL);
 
+    /* Initialize_arena suite */
+    CU_pSuite initialize_arena_suite = create_suite("initialize_arena suite", NULL, clean_up);
+    CU_add_test(initialize_arena_suite, "initialize arena default", test_initialize_arena_default);
+    CU_add_test(initialize_arena_suite, "initialize arena more than default", test_initialize_arena_more_than_default);
+
+    /* Destroy_arena suite */
+    CU_pSuite destroy_arena_suite = create_suite("destroy_arena_suite", NULL, NULL);
+    CU_add_test(destroy_arena_suite, "destroy arena", test_destroy_arena);
+    CU_add_test(destroy_arena_suite, "destroy arena NULL", test_destroy_arena_NULL);
+    
+    /* Alloc_arena suite */
+    CU_pSuite alloc_arena_suite = create_suite("alloc_arena suite", set_up, clean_up);
+    
     // run the tests
     CU_basic_run_tests();
 
