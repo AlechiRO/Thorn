@@ -10,7 +10,7 @@ typedef struct Arena_chunk {
     struct Arena_chunk* next;
     size_t capacity;
     size_t offset;
-    size_t _padding;    // Pad to 32 bytes to ensure data[] starts on a 16 byte boundary 
+    size_t padding;    // Pad to 32 bytes to ensure data[] starts on a 16 byte boundary 
     uint8_t data[];
 } arena_chunk_s;
 

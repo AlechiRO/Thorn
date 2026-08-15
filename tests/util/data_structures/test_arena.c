@@ -110,7 +110,16 @@ void test_destroy_arena_NULL(void) {
 void test_alloc_arena_small(void) {
     void* object = alloc_arena(arena, 18 * 16 + 4);
     CU_ASSERT_EQUAL(arena->head->offset, 19 * 16);
+    CU_ASSERT_EQUAL(object, arena->head->data);
     CU_ASSERT_PTR_NOT_NULL(object);
+}
+
+void test_alloc_arena_double_small(void) {
+    void* object = alloc_arena(arena, 10 * 16);
+    object = alloc_arena(arena, 20 * 16);
+    CU_ASSERT_PTR_NOT_NULL(object);
+    CU_ASSERT_EQUAL(arena->head->offset, 30 * 16);
+    CU_ASSERT_EQUAL(object, arena->head->data + 10 * 16);
 }
 
 int main(void) {
@@ -147,7 +156,7 @@ int main(void) {
     /* Alloc_arena suite */
     CU_pSuite alloc_arena_suite = create_suite("alloc_arena suite", set_up, clean_up);
     CU_add_test(alloc_arena_suite, "alloc arena small", test_alloc_arena_small); 
-
+    CU_add_test(alloc_arena_suite, "alloc arena two small sizes", test_alloc_arena_double_small);
 
     // run the tests
     CU_basic_run_tests();
