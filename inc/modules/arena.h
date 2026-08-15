@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <stdint.h>
 // Default arena chunk size is 64 KiB
-#define DEFAULT_ARENA_CHUNK_SIZE 64 * 1024  
+#define DEFAULT_ARENA_CHUNK_SIZE (64 * 1024)  
 
 typedef struct Arena_chunk {
     struct Arena_chunk* next;
     size_t capacity;
     size_t offset;
-    uint16_t data[];
+    size_t _padding;    // Pad to 32 bytes to ensure data[] starts on a 16 byte boundary 
+    uint8_t data[];
 } arena_chunk_s;
 
 
@@ -20,8 +21,8 @@ typedef struct Arena {
 } arena_s;
 
 
-arena_s* intialize_arena(size_t capacity);
-void* alloc_arena(arena_s* arena);
+arena_s* initialize_arena(size_t capacity);
+void* alloc_arena(arena_s* arena, size_t size);
 void reset_arena(arena_s* arena);
-void destroy_arena(arena_s** arena);
+void destroy_arena(arena_s** arena); 
 #endif
