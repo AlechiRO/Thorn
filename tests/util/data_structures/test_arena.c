@@ -11,13 +11,13 @@ arena_s* arena;
 
 
 /*
-Helper function to initialize arena to default size
+Helper function to free the memory used for arena
 */
 static void clean_up(void) {
     destroy_arena(&arena);
 }
 /*
-Helper function to free the memory used for arena
+Helper function to initialize arena to default size
 */
 static void set_up(void) {
     arena = initialize_arena(0);
