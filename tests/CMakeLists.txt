@@ -1,6 +1,7 @@
 add_subdirectory(generics)
 add_subdirectory(lexer)
 add_subdirectory(util)
+add_subdirectory(AST)
 
 
 find_library(CUNIT_LIBRARIES NAMES cunit)
@@ -127,6 +128,21 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
         ${CMAKE_SOURCE_DIR}/inc/generics
     )
 
+    # AST test executable
+
+    add_executable(AST_TEST_DRIVER 
+        ${AST_TEST_SOURCE}
+        $<TARGET_OBJECTS:AST_logic>
+        $<TARGET_OBJECTS:arena_logic>
+    )
+
+    target_link_libraries(AST_TEST_DRIVER PRIVATE ${CUNIT_LIBRARIES})
+    target_include_directories(AST_TEST_DRIVER PRIVATE 
+        ${CUNIT_INCLUDE_DIRS} 
+        ${CMAKE_SOURCE_DIR}/inc/modules
+        ${CMAKE_SOURCE_DIR}/inc/generics
+    )
+
     # Adding Tests
     add_test(NAME test_stack COMMAND STACK_TEST_DRIVER)
     add_test(NAME test_dll COMMAND DLL_TEST_DRIVER)
@@ -137,6 +153,7 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
     add_test(NAME test_lexer COMMAND LEXER_TEST_DRIVER)
     add_test(NAME test_hashmap COMMAND HASHMAP_TEST_DRIVER)
     add_test(NAME test_arena COMMAND ARENA_TEST_DRIVER)
+    add_test(NAME test_AST COMMAND AST_TEST_DRIVER)
 
 else()
     message(WARNING "CUnit not found!")

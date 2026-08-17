@@ -3,6 +3,7 @@
 #include "AST.h"
 
 
+
 /* 
 Helper method to help with allocating memory for expressions
 @param type Expression type
