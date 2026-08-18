@@ -37,7 +37,12 @@ int check_error(lexer_context_s* lctx) {
 }
 
 
-
+/*
+Raise parsing error and discard all remaining functions on the call stack
+@param pctx Pointer to parser context struct
+@param token Token that caused the error
+@param message Error message
+*/
 void parse_error(parser_context_s* pctx, token_s* token, const char* message) {
     handle_parse_error(token, message);
     pctx->had_error = 1;
@@ -45,6 +50,11 @@ void parse_error(parser_context_s* pctx, token_s* token, const char* message) {
     longjmp(pctx->panic_jmp, 1);
 }
 
+/*
+Handle parsing error
+@param token Token that caused the error
+@param message Error message
+*/
 void handle_parse_error(token_s* token, const char* message) {
     if(token->type == TOKEN_EOF) 
         report(token->line, " at end", message);
