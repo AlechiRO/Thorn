@@ -80,6 +80,47 @@ void test_p_peek_end_of_list(void) {
     CU_ASSERT_PTR_NULL(curr);
 }
 
+void test_p_previous_first_token(void) {
+    token_s* curr = p_previous(pctx);
+    CU_ASSERT_EQUAL(curr->type, TOKEN_NUMBER);
+    CU_ASSERT_EQUAL(curr->literal->type, LITERAL_DOUBLE);
+    CU_ASSERT_EQUAL(curr->literal->value.double_value, 1);
+    CU_ASSERT_TRUE(strcmp(curr->lexeme, "1") == 0);
+}
+
+void test_p_previous_default(void) {
+    pctx->current = 4;
+    token_s* curr = p_previous(pctx);
+    CU_ASSERT_EQUAL(curr->type, TOKEN_STAR);
+    CU_ASSERT_TRUE(strcmp(curr->lexeme, "*") == 0);
+}
+
+void test_p_is_at_end_true(void) {
+    pctx->current = token_list_get_size(pctx->tokens) - 1;
+    CU_ASSERT_TRUE(p_is_at_end(pctx));
+}
+
+void test_p_is_at_end_false(void) {
+    pctx->current = 4;
+    CU_ASSERT_FALSE(p_is_at_end(pctx));
+}
+
+void test_p_advance_default(void) {
+    pctx->current = 3;
+    token_s* token = p_advance(pctx);
+    CU_ASSERT_EQUAL(pctx->current, 4);
+    CU_ASSERT_EQUAL(token->type, TOKEN_STAR);
+    CU_ASSERT_TRUE(strcmp(token->lexeme, "*") == 0);
+}
+
+void test_p_advance_end_of_list(void) {
+    pctx->current = token_list_get_size(pctx->tokens) - 1;
+    token_s* token = p_advance(pctx);
+    CU_ASSERT_EQUAL(pctx->current, token_list_get_size(pctx->tokens) - 1);
+    CU_ASSERT_EQUAL(token->type, TOKEN_NUMBER);
+    CU_ASSERT_TRUE(strcmp(token->lexeme, "7") == 0);
+}
+
 
 
 int main(void) {
@@ -100,6 +141,21 @@ int main(void) {
     CU_pSuite p_peek_suite = create_suite("p_peek suite", set_up, clean_up);
     CU_add_test(p_peek_suite, "p_peek first token", test_p_peek_first_token);
     CU_add_test(p_peek_suite, "p_peek end of list", test_p_peek_end_of_list);
+
+    /* P_previous suite */
+    CU_pSuite p_previous_suite = create_suite("p_previous suite", set_up, clean_up);
+    CU_add_test(p_previous_suite, "p_previous first token", test_p_previous_first_token);
+    CU_add_test(p_previous_suite, "p_previous default", test_p_previous_default);
+
+    /* P_is_at_end suite */
+    CU_pSuite p_is_at_end_suite = create_suite("p_is_at_end suite", set_up, clean_up);
+    CU_add_test(p_is_at_end_suite, "p_is_at_end true", test_p_is_at_end_true);
+    CU_add_test(p_is_at_end_suite, "p_is_at_end false", test_p_is_at_end_false);
+
+    /* P_advance suite */
+    CU_pSuite p_advance_suite = create_suite("p_advance suite", set_up, clean_up);
+    CU_add_test(p_advance_suite, "p_advance default", test_p_advance_default);
+    CU_add_test(p_advance_suite, "p_advance end of list", test_p_advance_end_of_list);
 
     // run the tests
     CU_basic_run_tests();

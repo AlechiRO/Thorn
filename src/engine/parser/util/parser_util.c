@@ -107,7 +107,7 @@ int p_match(parser_context_s* pctx,token_type_e types[], uint32_t size) {
 }
 
 /*
-Return the current token if it matches the type and move to the next token or raise an error
+Consume the current token if it matches the type and move to the next token or raise an error
 @param pctx Pointer to parser context struct
 @type Expected type of the current token
 @param message Potential error message
