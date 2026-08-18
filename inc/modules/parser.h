@@ -21,7 +21,6 @@ expr_s* term(parser_context_s* pctx);
 expr_s* factor(parser_context_s* pctx);
 expr_s* unary(parser_context_s* pctx);
 expr_s* expression(parser_context_s* pctx);
-parser_context_s* initialize_parser_context(token_list* tokens);
 expr_s* primary(parser_context_s* pctx); 
 expr_s* parse(parser_context_s* pctx);
 
