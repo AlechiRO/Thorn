@@ -34,7 +34,8 @@ int main(void) {
 
         parser_context_s* pctx = initialize_parser_context(tokens);
         expr_s* expr = parse(pctx);
-        destroy_arena(&(pctx->arena));
+        
+        destroy_parser_context(&pctx);
         destroy_lexer_context(&lctx);  
     }
     destroy_line(&line);

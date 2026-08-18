@@ -23,14 +23,18 @@ parser_context_s* initialize_parser_context(token_list* tokens) {
 }
 
 /*
+Parser Context Destructor
+@param pctx Pointer to the address of the parser context
 */
 void destroy_parser_context(parser_context_s** pctx) {
     if(pctx == NULL || (*pctx) == NULL) {
         fprintf(stderr, "INFO: Pointer provided to parser context destructor was null!\n");
         return;
     }
-    
-    destroy_arena(&((*pctx)->arena));
+
+    // Only destroy arena if it has not been set to NULL
+    if((*pctx)->arena != NULL)
+        destroy_arena(&((*pctx)->arena));
     free(*pctx);
     (*pctx) = NULL;
 }
