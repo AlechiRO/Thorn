@@ -153,6 +153,7 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
         $<TARGET_OBJECTS:printer_logic>
         $<TARGET_OBJECTS:arena_logic>
         $<TARGET_OBJECTS:AST_logic>
+        $<TARGET_OBJECTS:token_logic>
     )
 
     target_link_libraries(PARSER_UTIL_TEST_DRIVER PRIVATE ${CUNIT_LIBRARIES})
