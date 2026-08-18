@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if !defined(ARRAY_LIST_TAG) || !defined(ARRAY_LIST_ITEM_TYPE)
 #error "Missing type or tag definition"
@@ -100,7 +101,7 @@ Adds an element after a specific index
 static inline void AL_FN(add_at_index)(ARRAY_LIST_TAG* list, int index, ARRAY_LIST_ITEM_TYPE element) {  
     if(index < 0 || index > list->size) {                                                 
         fprintf(stderr, "ERROR: Array List index out of bounds!");                  
-        exit(EXIT_FAILURE);                                                     
+        return;                                                   
     }                                                                                                       
                                                                     
     if(AL_FN(is_full)(list))                                        
@@ -141,7 +142,7 @@ Set the value at any specific index to another value
 static inline void AL_FN(set)(ARRAY_LIST_TAG* list, int index, ARRAY_LIST_ITEM_TYPE element) {    
     if(index < 0 || index >= list->size) {                              
         fprintf(stderr, "ERROR: Invalid index Array List!");                            
-        exit(EXIT_FAILURE);                                                         
+        return;                                                         
     }
     // Attempt to free the previous item before replacing
     ARRAY_LIST_FREE_ITEM((list->array)[index]);
@@ -157,7 +158,9 @@ Get the element at a specific index
 static inline ARRAY_LIST_ITEM_TYPE AL_FN(get)(ARRAY_LIST_TAG* list, int index) {  
     if(index < 0 || index >= list->size) {              
         fprintf(stderr, "ERROR: Invalid index Array List!");            
-        exit(EXIT_FAILURE);                                        
+        ARRAY_LIST_ITEM_TYPE dummy_element;
+        memset(&dummy_element, 0, sizeof(ARRAY_LIST_ITEM_TYPE));
+        return dummy_element;                                        
     }
     
     return (list->array)[index];                        
@@ -172,7 +175,9 @@ Remove an element from the array list
 static inline ARRAY_LIST_ITEM_TYPE AL_FN(remove)(ARRAY_LIST_TAG* list, int index) {   
     if(index < 0 || index >= list->size) {                  
         fprintf(stderr, "ERROR: Invalid index Array List!");                
-        exit(EXIT_FAILURE);                                            
+        ARRAY_LIST_ITEM_TYPE dummy_element;
+        memset(&dummy_element, 0, sizeof(ARRAY_LIST_ITEM_TYPE));
+        return dummy_element;                                            
     }                                                       
     ARRAY_LIST_ITEM_TYPE* arr = list->array;                                
     ARRAY_LIST_ITEM_TYPE result = arr[index];                     

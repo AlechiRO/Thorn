@@ -21,7 +21,7 @@ static void clean_up(void) {
 Helper function to initialize the Token
 */
 static void set_up(void) {
-    token = initialize_token(LITERAL_INT, NULL, NULL, 0);
+    token = initialize_token(LITERAL_DOUBLE, NULL, NULL, 0);
 }
 
 /* 
@@ -37,11 +37,11 @@ static CU_pSuite create_suite(const char* name,  void(*set_up)(),  void(*tear)()
 }
 
 void test_initialize_literal(void) {
-    literal = initialize_literal(LITERAL_INT);
-    (literal->value).int_value = 10;
+    literal = initialize_literal(LITERAL_DOUBLE);
+    (literal->value).double_value = 10;
     CU_ASSERT_PTR_NOT_NULL(literal);
-    CU_ASSERT_EQUAL(literal->type, LITERAL_INT);
-    CU_ASSERT_EQUAL((literal->value).int_value, 10);
+    CU_ASSERT_EQUAL(literal->type, LITERAL_DOUBLE);
+    CU_ASSERT_DOUBLE_EQUAL((literal->value).double_value, 10, 0.001);
     destroy_literal(&literal);
 }
 
@@ -70,8 +70,8 @@ void test_initialize_token(void) {
 }
 
 void test_destroy_token(void) {
-    literal = initialize_literal(LITERAL_INT);
-    (literal->value).int_value = 42;
+    literal = initialize_literal(LITERAL_DOUBLE);
+    (literal->value).double_value = 42;
 
     char* lexeme = malloc(sizeof("what_is_the_meaning_of_life"));
     strcpy(lexeme, "what_is_the_meaning_of_life");

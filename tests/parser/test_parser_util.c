@@ -37,6 +37,8 @@ static void set_up(void) {
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "3", three, 1));
     token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "7", seven, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
 }
 
 /* 
@@ -52,7 +54,6 @@ static CU_pSuite create_suite(const char* name,  void(*set_up)(),  void(*tear)()
 }
 
 void test_initialize_parser_context(void) {
-    pctx = initialize_parser_context(tokens);
     CU_ASSERT_PTR_NOT_NULL(pctx);
     CU_ASSERT_PTR_NOT_NULL(pctx->arena);
     CU_ASSERT_EQUAL(pctx->tokens, tokens);
@@ -61,9 +62,22 @@ void test_initialize_parser_context(void) {
 }
 
 void test_destroy_parser_context(void) {
-    pctx = initialize_parser_context(tokens);
     destroy_parser_context(&pctx);
     CU_ASSERT_PTR_NULL(pctx);
+}
+
+void test_p_peek_first_token(void) {
+    token_s* curr = p_peek(pctx);
+    CU_ASSERT_EQUAL(curr->type, TOKEN_NUMBER);
+    CU_ASSERT_EQUAL(curr->literal->type, LITERAL_DOUBLE);
+    CU_ASSERT_EQUAL(curr->literal->value.double_value, 1);
+    CU_ASSERT_TRUE(strcmp(curr->lexeme, "1") == 0);
+}
+
+void test_p_peek_end_of_list(void) {
+    pctx->current = token_list_get_size(pctx->tokens);
+    token_s* curr = p_peek(pctx);
+    CU_ASSERT_PTR_NULL(curr);
 }
 
 
@@ -80,7 +94,12 @@ int main(void) {
 
     /* Destroy_parser_context suite */
     CU_pSuite destroy_parser_context_suite = create_suite("destroy_parser_context suite", set_up, NULL);
-    CU_add_test(destroy_parser_context_suite, "destroy parser coontext", test_destroy_parser_context);
+    CU_add_test(destroy_parser_context_suite, "destroy parser context", test_destroy_parser_context);
+
+    /* P_peek suite */
+    CU_pSuite p_peek_suite = create_suite("p_peek suite", set_up, clean_up);
+    CU_add_test(p_peek_suite, "p_peek first token", test_p_peek_first_token);
+    CU_add_test(p_peek_suite, "p_peek end of list", test_p_peek_end_of_list);
 
     // run the tests
     CU_basic_run_tests();
