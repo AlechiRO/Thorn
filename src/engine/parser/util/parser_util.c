@@ -39,30 +39,63 @@ void destroy_parser_context(parser_context_s** pctx) {
     (*pctx) = NULL;
 }
 
+/*
+Peek at the current token in the array
+@param pctx Pointer to parser context struct
+@return Pointer to the current token
+*/
 token_s* p_peek(parser_context_s* pctx) {
     return token_list_get(pctx->tokens, pctx->current);
 }
 
+/*
+Get the previously accessed token in the array
+@param pctx Pointer to parser context struct
+@return Pointer to the previous token
+*/
 token_s* p_previous(parser_context_s* pctx) {
     return token_list_get(pctx->tokens, pctx->current > 0 ? pctx->current - 1 : 0);
 }
 
+/*
+Check if we reached the end of the token array
+@param pctx Pointer to parser context struct
+@return 1 if we reached the end and 0 otherwise
+*/
 int p_is_at_end(parser_context_s* pctx) {
     return p_peek(pctx)->type == TOKEN_EOF;
 }
 
+/*
+Move to the next token in the array and return the token at the old current position
+@param pctx Pointer to parser context struct
+@return The token at the old current position
+*/
 token_s* p_advance(parser_context_s* pctx) {
     if(!p_is_at_end(pctx))
         pctx->current++;
     return p_previous(pctx);
 }
 
+/*
+Check if the current token has a specific type
+@param pctx Pointer to parser context struct
+@param type Type of the current token
+@return 1 if the types match and 0 otherwise
+*/
 int p_check(parser_context_s* pctx, token_type_e type) {
     if(p_is_at_end(pctx)) 
         return 0;
     return p_peek(pctx)->type == type;
 }
 
+/*
+Check if the token amtches any of the types
+@param pctx Pointer to parser context struct
+@param types Array of all types the token could match
+@param size Number of possible matching types
+@return 1 if the token mathces one of the types and 0 otherwise
+*/
 int p_match(parser_context_s* pctx,token_type_e types[], uint32_t size) {
     for(uint32_t i = 0; i < size; i++) {
         if(p_check(pctx, types[i])) {
@@ -73,6 +106,13 @@ int p_match(parser_context_s* pctx,token_type_e types[], uint32_t size) {
     return 0;
 }
 
+/*
+Return the current token if it matches the type and move to the next token or raise an error
+@param pctx Pointer to parser context struct
+@type Expected type of the current token
+@param message Potential error message
+@return Pointer to the current token or NULL if an error occurs
+*/
 token_s* consume(parser_context_s* pctx, token_type_e type, const char* message) {
     if(p_check(pctx, type))
         return p_advance(pctx);
