@@ -92,7 +92,6 @@ typedef enum Token_type {
 
 typedef enum Literal_type {
     // Primitives
-    LITERAL_INT,
     LITERAL_DOUBLE,
     LITERAL_NULL,
     LITERAL_BOOLEAN,
@@ -125,7 +124,6 @@ typedef struct Literal {
     literal_type_e type;
     union Value {
         // Typed Primitives
-        int int_value;
         double double_value;
         void* null_value;
         int boolean_value;
