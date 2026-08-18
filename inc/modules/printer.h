@@ -2,5 +2,4 @@
 #define PRINTER_H
 
 void default_prompt(void); 
-int check_error();
 #endif

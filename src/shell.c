@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "printer.h"
+#include "error.h"
 #include "lexer.h"
 #include "lexer_util.h"
 #include "parser.h"

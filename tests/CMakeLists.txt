@@ -2,6 +2,7 @@ add_subdirectory(generics)
 add_subdirectory(lexer)
 add_subdirectory(util)
 add_subdirectory(AST)
+add_subdirectory(parser)
 
 
 find_library(CUNIT_LIBRARIES NAMES cunit)
@@ -144,6 +145,23 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
         ${CMAKE_SOURCE_DIR}/inc/generics
     )
 
+    # Parser_util test executable
+
+    add_executable(PARSER_UTIL_TEST_DRIVER
+        ${PARSER_UTIL_TEST_SOURCE}
+        $<TARGET_OBJECTS:parser_util_logic>
+        $<TARGET_OBJECTS:printer_logic>
+        $<TARGET_OBJECTS:arena_logic>
+        $<TARGET_OBJECTS:AST_logic>
+    )
+
+    target_link_libraries(PARSER_UTIL_TEST_DRIVER PRIVATE ${CUNIT_LIBRARIES})
+    target_include_directories(PARSER_UTIL_TEST_DRIVER PRIVATE 
+        ${CUNIT_INCLUDE_DIRS} 
+        ${CMAKE_SOURCE_DIR}/inc/modules
+        ${CMAKE_SOURCE_DIR}/inc/generics
+    )
+
     # Adding Tests
     add_test(NAME test_stack COMMAND STACK_TEST_DRIVER)
     add_test(NAME test_dll COMMAND DLL_TEST_DRIVER)
@@ -155,6 +173,7 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
     add_test(NAME test_hashmap COMMAND HASHMAP_TEST_DRIVER)
     add_test(NAME test_arena COMMAND ARENA_TEST_DRIVER)
     add_test(NAME test_AST COMMAND AST_TEST_DRIVER)
+    add_test(NAME test_parser_util COMMAND PARSER_UTIL_TEST_DRIVER)
 
 else()
     message(WARNING "CUnit not found!")
