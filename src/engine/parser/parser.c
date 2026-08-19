@@ -5,16 +5,6 @@
 #include "parser_util.h"
 
 
-
-/*
-Parse an expression
-@param pctx Pointer to parser context struct
-@return Pointer to expression struct
-*/
-expr_s* expression(parser_context_s* pctx) {
-    return equality(pctx);
-}
-
 /*
 Parse a literal or grouping expression
 If nothing matches raise a parsing error
@@ -145,6 +135,16 @@ void synchronize(parser_context_s* pctx) {
         }
         p_advance(pctx);
     }
+}
+
+
+/*
+Parse an expression
+@param pctx Pointer to parser context struct
+@return Pointer to expression struct
+*/
+expr_s* expression(parser_context_s* pctx) {
+    return equality(pctx);
 }
 
 /*
