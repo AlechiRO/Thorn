@@ -121,6 +121,51 @@ void test_p_advance_end_of_list(void) {
     CU_ASSERT_TRUE(strcmp(token->lexeme, "7") == 0);
 }
 
+void test_p_check_default_true(void) {
+    CU_ASSERT_TRUE(p_check(pctx, TOKEN_NUMBER));
+}
+
+void test_p_check_default_false(void) {
+    CU_ASSERT_FALSE(p_check(pctx, TOKEN_STRING_DEFAULT));
+}
+
+void test_p_check_default_end_of_list(void) {
+    pctx->current = token_list_get_size(pctx->tokens) - 1;
+    CU_ASSERT_FALSE(p_check(pctx, EOF));
+}
+
+void test_p_match_one_token_true(void) {
+    pctx->current = 5;
+    CU_ASSERT_TRUE(p_match(pctx, (token_type_e[]){TOKEN_EQUAL_EQUAL}, 1));
+}
+
+void test_p_match_two_tokens_true(void) {
+    pctx->current = 5;
+    CU_ASSERT_TRUE(p_match(pctx, (token_type_e[]){TOKEN_APPEND_REDIRECT, TOKEN_EQUAL_EQUAL}, 2));
+}
+
+void test_p_match_two_tokens_false(void) {
+    pctx->current = 5;
+    CU_ASSERT_FALSE(p_match(pctx, (token_type_e[]){TOKEN_APPEND_REDIRECT, TOKEN_EQUAL}, 2));
+}
+
+void test_p_consume_matching_token(void) {
+    pctx->current = 5;
+    token_s* token = p_consume(pctx, TOKEN_EQUAL_EQUAL, "Unexpected token!");
+    CU_ASSERT_EQUAL(pctx->current, 6);
+    CU_ASSERT_EQUAL(token->type, TOKEN_EQUAL_EQUAL);
+}
+
+void test_p_consume_unexpected_token(void) {
+    pctx->current = 5;
+    if(setjmp(pctx->panic_jmp) == 0) {
+        token_s* token = p_consume(pctx, TOKEN_ROUND_BRACE_RIGHT, "Unexpected token!");
+    } else {
+        CU_ASSERT_TRUE(1);
+    }
+}
+
+
 
 
 int main(void) {
@@ -156,6 +201,23 @@ int main(void) {
     CU_pSuite p_advance_suite = create_suite("p_advance suite", set_up, clean_up);
     CU_add_test(p_advance_suite, "p_advance default", test_p_advance_default);
     CU_add_test(p_advance_suite, "p_advance end of list", test_p_advance_end_of_list);
+
+    /* P_check suite */
+    CU_pSuite p_check_suite = create_suite("p_check suite", set_up, clean_up);
+    CU_add_test(p_check_suite, "p_check default true", test_p_check_default_true);
+    CU_add_test(p_check_suite, "p_check default false", test_p_check_default_false);
+    CU_add_test(p_check_suite, "p_check end of list", test_p_check_default_end_of_list);
+
+    /* P_match suite */
+    CU_pSuite p_match_suite = create_suite("p_match suite", set_up, clean_up);
+    CU_add_test(p_match_suite, "p_match one token true", test_p_match_one_token_true);
+    CU_add_test(p_match_suite, "p_match two tokens true", test_p_match_two_tokens_true);
+    CU_add_test(p_match_suite, "p_match two tokens false", test_p_match_two_tokens_false);
+
+    /* P_consume suite */
+    CU_pSuite p_consume_suite = create_suite("p_consume suite", set_up, clean_up);
+    CU_add_test(p_consume_suite, "p_consume matching token", test_p_consume_matching_token);
+    CU_add_test(p_consume_suite, "p_consume unexpected token", test_p_consume_unexpected_token);
 
     // run the tests
     CU_basic_run_tests();

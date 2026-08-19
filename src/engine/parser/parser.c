@@ -36,7 +36,7 @@ expr_s* primary(parser_context_s* pctx) {
 
     if(p_match(pctx, (token_type_e[]){TOKEN_ROUND_BRACE_LEFT}, 1)) {
         expr_s* expr = expression(pctx);
-        consume(pctx, TOKEN_ROUND_BRACE_RIGHT, "Expect \')\' after expression.");
+        p_consume(pctx, TOKEN_ROUND_BRACE_RIGHT, "Expect \')\' after expression.");
         return initialize_expr_grouping(expr, pctx->arena);
     }
     parse_error(pctx, p_peek(pctx), "Expect expression.");

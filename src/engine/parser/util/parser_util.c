@@ -113,7 +113,7 @@ Consume the current token if it matches the type and move to the next token or r
 @param message Potential error message
 @return Pointer to the current token or NULL if an error occurs
 */
-token_s* consume(parser_context_s* pctx, token_type_e type, const char* message) {
+token_s* p_consume(parser_context_s* pctx, token_type_e type, const char* message) {
     if(p_check(pctx, type))
         return p_advance(pctx);
     parse_error(pctx, p_peek(pctx), message);
