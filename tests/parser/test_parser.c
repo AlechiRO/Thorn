@@ -21,7 +21,41 @@ static void clean_up(void) {
 Helper function to initialize default token list
 */
 static void set_up(void) {
+    /* 
+    Token Stream: (2 + 1 * 4) * 5 / 3 != 10 == 0
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    literal_s* five = initialize_literal(LITERAL_DOUBLE);
+    five->value.double_value = 5;
+    literal_s* three = initialize_literal(LITERAL_DOUBLE);
+    three->value.double_value = 3;
+    literal_s* ten = initialize_literal(LITERAL_DOUBLE);
+    ten->value.double_value = 10;
+    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
+    zero->value.double_value = 0;
 
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_RIGHT, ")", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "5", five, 1));
+    token_list_add(tokens, initialize_token(TOKEN_SLASH, "/", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "3", three, 1));
+    token_list_add(tokens, initialize_token(TOKEN_BANG_EQUAL, "!=", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "10", ten, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
 }
 
 /* 
