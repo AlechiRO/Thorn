@@ -22,11 +22,11 @@ Helper function to initialize default token list
 */
 static void set_up(void) {
     /* 
-    Token Stream: (2 + 1 * 4) * 5 / 3 != 10 == 0
+    Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false
     */
     tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
+    literal_s* negative_two = initialize_literal(LITERAL_DOUBLE);
+    negative_two->value.double_value = -2;
     literal_s* one = initialize_literal(LITERAL_DOUBLE);
     one->value.double_value = 1;
     literal_s* four = initialize_literal(LITERAL_DOUBLE);
@@ -37,11 +37,11 @@ static void set_up(void) {
     three->value.double_value = 3;
     literal_s* ten = initialize_literal(LITERAL_DOUBLE);
     ten->value.double_value = 10;
-    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
-    zero->value.double_value = 0;
+    literal_s* false = initialize_literal(LITERAL_BOOLEAN);
+    false->value.boolean_value = 0;
 
     token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", negative_two, 1));
     token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
     token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
@@ -53,9 +53,10 @@ static void set_up(void) {
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "3", three, 1));
     token_list_add(tokens, initialize_token(TOKEN_BANG_EQUAL, "!=", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "10", ten, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_FALSE, "false", false, 1));
     token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
 }
 
 /* 
@@ -70,7 +71,11 @@ static CU_pSuite create_suite(const char* name,  void(*set_up)(),  void(*tear)()
     return suite;
 }
 
-
+void test_primary_literal(void) {
+    pctx->current = 3;
+    expr_s* e = primary(pctx);
+    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_NUMBER); 
+}
 
 
 
@@ -81,7 +86,9 @@ int main(void) {
     if (CU_initialize_registry() != CUE_SUCCESS)
         errx(EXIT_FAILURE, "can't initialize test registry"); 
 
-    
+    /* Primary suite */
+    CU_pSuite primary_suite = create_suite("primary suite", set_up, clean_up);
+    CU_add_test(primary_suite, "primary parse literal", test_primary_literal);
 
     // run the tests
     CU_basic_run_tests();

@@ -166,7 +166,7 @@ if(CUNIT_LIBRARIES AND CUNIT_INCLUDE_DIRS)
     # Parser test executable
 
     add_executable(PARSER_TEST_DRIVER
-        ${PARSER_UTIL_TEST_SOURCE}
+        ${PARSER_TEST_SOURCE}
         $<TARGET_OBJECTS:parser_util_logic>
         $<TARGET_OBJECTS:printer_logic>
         $<TARGET_OBJECTS:arena_logic>
