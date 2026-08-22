@@ -25,8 +25,8 @@ static void set_up(void) {
     Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false
     */
     tokens = token_list_initialize();
-    literal_s* negative_two = initialize_literal(LITERAL_DOUBLE);
-    negative_two->value.double_value = -2;
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
     literal_s* one = initialize_literal(LITERAL_DOUBLE);
     one->value.double_value = 1;
     literal_s* four = initialize_literal(LITERAL_DOUBLE);
@@ -41,7 +41,8 @@ static void set_up(void) {
     false->value.boolean_value = 0;
 
     token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", negative_two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
     token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
     token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
@@ -71,10 +72,66 @@ static CU_pSuite create_suite(const char* name,  void(*set_up)(),  void(*tear)()
     return suite;
 }
 
-void test_primary_literal(void) {
-    pctx->current = 3;
+void test_primary_literal_number(void) {
+    pctx->current = 4;
     expr_s* e = primary(pctx);
-    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_NUMBER); 
+    CU_ASSERT_EQUAL(e->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_NUMBER);
+    CU_ASSERT_DOUBLE_EQUAL(e->expression.literal.payload.number, 1, 0.001); 
+}
+
+void test_primary_literal_boolean(void) {
+    pctx->current = 15;
+    expr_s* e = primary(pctx);
+    CU_ASSERT_EQUAL(e->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_BOOLEAN);
+    CU_ASSERT_EQUAL(e->expression.literal.payload.boolean, 0);
+}
+
+void test_primary_grouping(void) {
+    expr_s* e = primary(pctx);
+    CU_ASSERT_EQUAL(pctx->current, 8);
+    CU_ASSERT_EQUAL(e->type, EXPR_GROUPING);
+
+    binary_expr_s binary1 = e->expression.grouping.expr->expression.binary;
+
+    CU_ASSERT_EQUAL(binary1.left->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(binary1.left->expression.unary.op->type, TOKEN_MINUS);
+    CU_ASSERT_DOUBLE_EQUAL(binary1.left->expression.unary.right->expression.literal.payload.number, 2, 0.001)
+
+    CU_ASSERT_EQUAL(binary1.op->type, TOKEN_PLUS);
+    CU_ASSERT_EQUAL(binary1.right->type, EXPR_BINARY);
+    binary_expr_s binary2 = binary1.right->expression.binary;
+
+    
+    CU_ASSERT_DOUBLE_EQUAL(binary2.left->expression.literal.payload.number, 1, 0.001);
+    CU_ASSERT_EQUAL(binary2.op->type, TOKEN_STAR);
+    CU_ASSERT_DOUBLE_EQUAL(binary2.right->expression.literal.payload.number, 4, 0.001);
+}
+
+void test_primary_unclosed_parentheses(void) {
+    /* 
+    Token Stream: (-2 + 1
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
+
+    if(setjmp(pctx->panic_jmp) == 0) {
+        primary(pctx);
+    } else {
+        CU_ASSERT_TRUE(pctx->had_error);
+    }
 }
 
 
@@ -88,7 +145,13 @@ int main(void) {
 
     /* Primary suite */
     CU_pSuite primary_suite = create_suite("primary suite", set_up, clean_up);
-    CU_add_test(primary_suite, "primary parse literal", test_primary_literal);
+    CU_add_test(primary_suite, "primary parse literal number", test_primary_literal_number);
+    CU_add_test(primary_suite, "primary parse literal boolean", test_primary_literal_boolean);
+    CU_add_test(primary_suite, "primary parse grouping", test_primary_grouping);
+
+    /* Primary error suite */
+    CU_pSuite primary_error_suite = create_suite("primary error suite", NULL, clean_up);
+    CU_add_test(primary_error_suite, "primary error unclosed parentheses", test_primary_unclosed_parentheses);
 
     // run the tests
     CU_basic_run_tests();
