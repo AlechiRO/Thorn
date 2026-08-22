@@ -134,6 +134,31 @@ void test_primary_unclosed_parentheses(void) {
     }
 }
 
+void test_unary_minus(void) {
+    /* 
+    Token Stream: -2 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e = unary(pctx);
+    
+    CU_ASSERT_EQUAL(e->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(e->expression.unary.op->type, TOKEN_MINUS);
+    CU_ASSERT_DOUBLE_EQUAL(e->expression.unary.right->expression.literal.payload.number, 2, 0.001);
+}
+
+void test_unary_bang(void) {
+    /*
+    Token Stream: !!!true EOF
+    */
+}
+
 
 
 
@@ -152,6 +177,11 @@ int main(void) {
     /* Primary error suite */
     CU_pSuite primary_error_suite = create_suite("primary error suite", NULL, clean_up);
     CU_add_test(primary_error_suite, "primary error unclosed parentheses", test_primary_unclosed_parentheses);
+
+    /* Unary suite */
+    CU_pSuite unary_suite = create_suite("unary suite", NULL, clean_up);
+    CU_add_test(unary_suite, "unary minus", test_unary_minus);
+
 
     // run the tests
     CU_basic_run_tests();
