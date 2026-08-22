@@ -22,7 +22,7 @@ Helper function to initialize default token list
 */
 static void set_up(void) {
     /* 
-    Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false
+    Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false EOF
     */
     tokens = token_list_initialize();
     literal_s* two = initialize_literal(LITERAL_DOUBLE);
@@ -111,7 +111,7 @@ void test_primary_grouping(void) {
 
 void test_primary_unclosed_parentheses(void) {
     /* 
-    Token Stream: (-2 + 1
+    Token Stream: (-2 + 1 EOF
     */
     tokens = token_list_initialize();
     literal_s* two = initialize_literal(LITERAL_DOUBLE);
