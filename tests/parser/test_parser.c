@@ -221,6 +221,35 @@ void test_factor_three_numbers(void) {
     CU_ASSERT_EQUAL(e3->expression.literal.payload.number, 4);
 }
 
+void test_term_two_numbers(void) {
+    /* 
+    Token Stream: 2 + 1 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e = term(pctx);
+
+    CU_ASSERT_EQUAL(e->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(e->expression.binary.left->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e->expression.binary.op->type, TOKEN_PLUS);
+    CU_ASSERT_EQUAL(e->expression.binary.right->type, EXPR_LITERAL);
+
+    expr_s* t1 = e->expression.binary.left;
+    expr_s* t2 = e->expression.binary.right;
+
+    CU_ASSERT_EQUAL(t1->expression.literal.payload.number, 2);
+    CU_ASSERT_EQUAL(t2->expression.literal.payload.number, 1);
+}   
+
 
 
 
@@ -249,7 +278,9 @@ int main(void) {
     CU_pSuite factor_suite = create_suite("factor suite", NULL, clean_up);
     CU_add_test(factor_suite, "factor three numbers", test_factor_three_numbers);
 
-
+    /* Term suite */
+    CU_pSuite term_suite = create_suite("term suite", NULL, clean_up);
+    CU_add_test(term_suite, "term two numbers", test_term_two_numbers);
 
     // run the tests
     CU_basic_run_tests();
