@@ -157,6 +157,32 @@ void test_unary_bang(void) {
     /*
     Token Stream: !!!true EOF
     */
+    tokens = token_list_initialize();
+    literal_s* true = initialize_literal(LITERAL_BOOLEAN);
+    true->value.boolean_value = 1;
+    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_TRUE, "true", true, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e1 = unary(pctx);
+    CU_ASSERT_EQUAL(e1->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(e1->expression.unary.op->type, TOKEN_BANG);
+
+    expr_s* e2 = e1->expression.unary.right;
+    CU_ASSERT_EQUAL(e2->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(e2->expression.unary.op->type, TOKEN_BANG);
+
+    expr_s* e3 = e2->expression.unary.right;
+    CU_ASSERT_EQUAL(e3->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(e3->expression.unary.op->type, TOKEN_BANG);
+
+    expr_s* e4 = e3->expression.unary.right;
+    CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e4->expression.literal.type, EXPR_LITERAL_BOOLEAN);
+    CU_ASSERT_EQUAL(e4->expression.literal.payload.boolean, 1);
 }
 
 
@@ -181,7 +207,7 @@ int main(void) {
     /* Unary suite */
     CU_pSuite unary_suite = create_suite("unary suite", NULL, clean_up);
     CU_add_test(unary_suite, "unary minus", test_unary_minus);
-
+    CU_add_test(unary_suite, "unary multiple bangs", test_unary_bang);
 
     // run the tests
     CU_basic_run_tests();
