@@ -185,6 +185,42 @@ void test_unary_bang(void) {
     CU_ASSERT_EQUAL(e4->expression.literal.payload.boolean, 1);
 }
 
+void test_factor_three_numbers(void) {
+    /* 
+    Token Stream: 2 * 1 / 4 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_SLASH, "/", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e1 = factor(pctx);
+    CU_ASSERT_EQUAL(e1->type, EXPR_BINARY)
+    CU_ASSERT_EQUAL(e1->expression.binary.left->type, EXPR_BINARY);
+
+    expr_s* e2 = e1->expression.binary.left;
+    CU_ASSERT_EQUAL(e2->expression.binary.left->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e2->expression.binary.left->expression.literal.payload.number, 2);
+    CU_ASSERT_EQUAL(e2->expression.binary.op->type, TOKEN_STAR);
+    CU_ASSERT_EQUAL(e2->expression.binary.right->expression.literal.payload.number, 1);
+
+
+    CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_SLASH);
+
+    expr_s* e3 = e1->expression.binary.right;
+    CU_ASSERT_EQUAL(e3->expression.literal.payload.number, 4);
+}
+
 
 
 
@@ -208,6 +244,12 @@ int main(void) {
     CU_pSuite unary_suite = create_suite("unary suite", NULL, clean_up);
     CU_add_test(unary_suite, "unary minus", test_unary_minus);
     CU_add_test(unary_suite, "unary multiple bangs", test_unary_bang);
+
+    /* Factor suite */
+    CU_pSuite factor_suite = create_suite("factor suite", NULL, clean_up);
+    CU_add_test(factor_suite, "factor three numbers", test_factor_three_numbers);
+
+
 
     // run the tests
     CU_basic_run_tests();
