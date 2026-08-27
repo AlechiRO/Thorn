@@ -250,7 +250,46 @@ void test_term_two_numbers(void) {
     CU_ASSERT_EQUAL(t2->expression.literal.payload.number, 1);
 }   
 
+void test_comparison_two_operators(void) {
+    /*
+    Token Stream:2 < 1 >= 4 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_GREATER_EQUAL, ">=", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
 
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e1 = comparison(pctx);
+    CU_ASSERT_EQUAL(e1->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_GREATER_EQUAL);
+
+    expr_s* e2 = e1->expression.binary.right;
+    CU_ASSERT_EQUAL(e2->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e2->expression.literal.payload.number, 4);
+
+    expr_s* e3 = e1->expression.binary.left;
+    CU_ASSERT_EQUAL(e3->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(e3->expression.binary.op->type, TOKEN_LESS);
+
+    expr_s* e4 = e3->expression.binary.right;
+    CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e4->expression.literal.payload.number, 1);
+
+    expr_s* e5 = e3->expression.binary.left;
+    CU_ASSERT_EQUAL(e5->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e5->expression.literal.payload.number, 2);
+}
 
 
 int main(void) {
@@ -282,6 +321,9 @@ int main(void) {
     CU_pSuite term_suite = create_suite("term suite", NULL, clean_up);
     CU_add_test(term_suite, "term two numbers", test_term_two_numbers);
 
+    /* Comparison suite */
+    CU_pSuite comparison_suite = create_suite("comparison suite", NULL, clean_up);
+    CU_add_test(comparison_suite, "comparison two operators", test_comparison_two_operators);
     // run the tests
     CU_basic_run_tests();
 
