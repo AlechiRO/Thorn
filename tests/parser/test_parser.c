@@ -182,7 +182,7 @@ void test_unary_bang(void) {
     expr_s* e4 = e3->expression.unary.right;
     CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e4->expression.literal.type, EXPR_LITERAL_BOOLEAN);
-    CU_ASSERT_EQUAL(e4->expression.literal.payload.boolean, 1);
+    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.boolean, 1, 0.001);
 }
 
 void test_factor_three_numbers(void) {
@@ -210,15 +210,15 @@ void test_factor_three_numbers(void) {
 
     expr_s* e2 = e1->expression.binary.left;
     CU_ASSERT_EQUAL(e2->expression.binary.left->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(e2->expression.binary.left->expression.literal.payload.number, 2);
+    CU_ASSERT_DOUBLE_EQUAL(e2->expression.binary.left->expression.literal.payload.number, 2, 0.001);
     CU_ASSERT_EQUAL(e2->expression.binary.op->type, TOKEN_STAR);
-    CU_ASSERT_EQUAL(e2->expression.binary.right->expression.literal.payload.number, 1);
+    CU_ASSERT_DOUBLE_EQUAL(e2->expression.binary.right->expression.literal.payload.number, 1, 0.001);
 
 
     CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_SLASH);
 
     expr_s* e3 = e1->expression.binary.right;
-    CU_ASSERT_EQUAL(e3->expression.literal.payload.number, 4);
+    CU_ASSERT_DOUBLE_EQUAL(e3->expression.literal.payload.number, 4, 0.001);
 }
 
 void test_term_two_numbers(void) {
@@ -246,13 +246,13 @@ void test_term_two_numbers(void) {
     expr_s* t1 = e->expression.binary.left;
     expr_s* t2 = e->expression.binary.right;
 
-    CU_ASSERT_EQUAL(t1->expression.literal.payload.number, 2);
-    CU_ASSERT_EQUAL(t2->expression.literal.payload.number, 1);
+    CU_ASSERT_DOUBLE_EQUAL(t1->expression.literal.payload.number, 2, 0.001);
+    CU_ASSERT_DOUBLE_EQUAL(t2->expression.literal.payload.number, 1, 0.001);
 }   
 
 void test_comparison_two_operators(void) {
     /*
-    Token Stream:2 < 1 >= 4 EOF
+    Token Stream: 2 < 1 >= 4 EOF
     */
     tokens = token_list_initialize();
     literal_s* two = initialize_literal(LITERAL_DOUBLE);
@@ -276,7 +276,7 @@ void test_comparison_two_operators(void) {
 
     expr_s* e2 = e1->expression.binary.right;
     CU_ASSERT_EQUAL(e2->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(e2->expression.literal.payload.number, 4);
+    CU_ASSERT_DOUBLE_EQUAL(e2->expression.literal.payload.number, 4, 0.001);
 
     expr_s* e3 = e1->expression.binary.left;
     CU_ASSERT_EQUAL(e3->type, EXPR_BINARY);
@@ -284,11 +284,55 @@ void test_comparison_two_operators(void) {
 
     expr_s* e4 = e3->expression.binary.right;
     CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(e4->expression.literal.payload.number, 1);
+    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.number, 1, 0.001);
 
     expr_s* e5 = e3->expression.binary.left;
     CU_ASSERT_EQUAL(e5->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(e5->expression.literal.payload.number, 2);
+    CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 2, 0.001);
+}
+
+void test_equality_two_operators(void) {
+    /*
+    Token Stream: 2 != 4 == 1 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_BANG_EQUAL, "!=", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* e1 = equality(pctx);
+    CU_ASSERT_EQUAL(e1->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_EQUAL_EQUAL);
+
+    expr_s* e2 = e1->expression.binary.right;
+    CU_ASSERT_EQUAL(e2->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e2->expression.literal.type, EXPR_LITERAL_NUMBER);
+    CU_ASSERT_DOUBLE_EQUAL(e2->expression.literal.payload.number, 1, 0.001);
+
+    expr_s* e3 = e1->expression.binary.left;
+    CU_ASSERT_EQUAL(e3->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(e3->expression.binary.op->type, TOKEN_BANG_EQUAL);
+
+    expr_s* e4 = e3->expression.binary.left;
+    CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e4->expression.literal.type, EXPR_LITERAL_NUMBER);
+    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.number, 2, 0.001);
+
+    expr_s* e5 = e3->expression.binary.right;
+    CU_ASSERT_EQUAL(e5->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(e5->expression.literal.type, EXPR_LITERAL_NUMBER);
+    CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 4, 0.001);
 }
 
 
@@ -324,6 +368,12 @@ int main(void) {
     /* Comparison suite */
     CU_pSuite comparison_suite = create_suite("comparison suite", NULL, clean_up);
     CU_add_test(comparison_suite, "comparison two operators", test_comparison_two_operators);
+    
+    /* Equality suite */
+    CU_pSuite equality_suite = create_suite("equality suite", NULL, clean_up);
+    CU_add_test(equality_suite, "equality two operators", test_equality_two_operators);
+    
+    
     // run the tests
     CU_basic_run_tests();
 
