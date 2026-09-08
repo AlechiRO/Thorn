@@ -335,6 +335,73 @@ void test_equality_two_operators(void) {
     CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 4, 0.001);
 }
 
+void test_synchronize_previous_token_is_terminator(void) {
+    /*
+    Token Stream: \n 1 + 2 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+    pctx = initialize_parser_context(tokens);
+
+    synchronize(pctx);
+    CU_ASSERT_EQUAL(pctx->current, 1);
+}
+
+void test_synchronize_eventual_terminator(void) {
+    /*
+    Token Stream: 1 + 2 \n return EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_RETURN, "return", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+    pctx = initialize_parser_context(tokens);
+
+    synchronize(pctx);
+    CU_ASSERT_EQUAL(pctx->current, 4);
+}
+
+void test_synchronize_keyword(void) {
+    /*
+    Token Stream: 1 + 2 return 4 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_RETURN, "return", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+    pctx = initialize_parser_context(tokens);
+
+    synchronize(pctx);
+    CU_ASSERT_EQUAL(pctx->current, 3);
+}
+
 
 int main(void) {
 
@@ -372,6 +439,12 @@ int main(void) {
     /* Equality suite */
     CU_pSuite equality_suite = create_suite("equality suite", NULL, clean_up);
     CU_add_test(equality_suite, "equality two operators", test_equality_two_operators);
+
+    /* Synchronize Suite */
+    CU_pSuite synchronize_suite = create_suite("synchronize suite", NULL, clean_up);
+    CU_add_test(synchronize_suite, "synchronize previous token is terminator", test_synchronize_previous_token_is_terminator);
+    CU_add_test(synchronize_suite, "synchronize eventual terminator", test_synchronize_eventual_terminator);
+    CU_add_test(synchronize_suite, "synchronize keyword", test_synchronize_keyword);
     
     
     // run the tests
