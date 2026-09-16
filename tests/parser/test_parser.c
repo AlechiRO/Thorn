@@ -402,6 +402,71 @@ void test_synchronize_keyword(void) {
     CU_ASSERT_EQUAL(pctx->current, 3);
 }
 
+void test_parse_default(void) {
+    /* 
+    Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false EOF
+    */
+    expr_s* main_expr = parse(pctx);
+
+    CU_ASSERT_EQUAL(main_expr->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(main_expr->expression.binary.op->type, TOKEN_EQUAL_EQUAL);
+
+    expr_s* false_expr = main_expr->expression.binary.right;
+    CU_ASSERT_EQUAL(false_expr->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(false_expr->expression.literal.payload.boolean, 0);
+
+    expr_s* bang_equal_expr = main_expr->expression.binary.left;
+    CU_ASSERT_EQUAL(bang_equal_expr->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(bang_equal_expr->expression.binary.op->type, TOKEN_BANG_EQUAL);
+    
+    expr_s* ten_expr = bang_equal_expr->expression.binary.right;
+    CU_ASSERT_EQUAL(ten_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(ten_expr->expression.literal.payload.number, 10, 0.001);
+
+    expr_s* div_expr = bang_equal_expr->expression.binary.left;
+    CU_ASSERT_EQUAL(div_expr->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(div_expr->expression.binary.op->type, TOKEN_SLASH);
+    
+    expr_s* three_expr = div_expr->expression.binary.right;
+    CU_ASSERT_EQUAL(three_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(three_expr->expression.literal.payload.number, 3, 0.001);
+
+    expr_s* multiply_expr_2 = div_expr->expression.binary.left;
+    CU_ASSERT_EQUAL(multiply_expr_2->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(multiply_expr_2->expression.binary.op->type, TOKEN_STAR);
+
+    expr_s* five_expr = multiply_expr_2->expression.binary.right;
+    CU_ASSERT_EQUAL(five_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(five_expr->expression.literal.payload.number, 5, 0.001);
+
+    expr_s* group_expr = multiply_expr_2->expression.binary.left;
+    CU_ASSERT_EQUAL(group_expr->type, EXPR_GROUPING);
+
+    expr_s* plus_expr = group_expr->expression.grouping.expr;
+    CU_ASSERT_EQUAL(plus_expr->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(plus_expr->expression.binary.op->type, TOKEN_PLUS)
+
+    expr_s* multiply_expr_1 = plus_expr->expression.binary.right;
+    CU_ASSERT_EQUAL(multiply_expr_2->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(multiply_expr_2->expression.binary.op->type, TOKEN_STAR);
+
+    expr_s* one_expr = multiply_expr_1->expression.binary.left;
+    CU_ASSERT_EQUAL(one_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(one_expr->expression.literal.payload.number, 1, 0.001);
+
+    expr_s* four_expr = multiply_expr_1->expression.binary.right;
+    CU_ASSERT_EQUAL(four_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(four_expr->expression.literal.payload.number, 4, 0.001);
+
+    expr_s* unary_expr = plus_expr->expression.binary.left;
+    CU_ASSERT_EQUAL(unary_expr->type, EXPR_UNARY);
+    CU_ASSERT_EQUAL(unary_expr->expression.unary.op->type, TOKEN_MINUS);
+    
+    expr_s* two_expr = unary_expr->expression.unary.right;
+    CU_ASSERT_EQUAL(two_expr->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(two_expr->expression.literal.payload.number, 2, 0.001);
+}
+
 
 int main(void) {
 
@@ -445,6 +510,11 @@ int main(void) {
     CU_add_test(synchronize_suite, "synchronize previous token is terminator", test_synchronize_previous_token_is_terminator);
     CU_add_test(synchronize_suite, "synchronize eventual terminator", test_synchronize_eventual_terminator);
     CU_add_test(synchronize_suite, "synchronize keyword", test_synchronize_keyword);
+
+    /* Parse suite */
+    CU_pSuite parse_suite = create_suite("parse suite", set_up, clean_up);
+    CU_add_test(parse_suite, "parse default", test_parse_default);
+
     
     
     // run the tests
