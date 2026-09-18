@@ -467,6 +467,50 @@ void test_parse_default(void) {
     CU_ASSERT_DOUBLE_EQUAL(two_expr->expression.literal.payload.number, 2, 0.001);
 }
 
+void test_parse_synchronize(void) {
+    /*
+    Token Stream: (1 ** 2 == 1 \n for(i = 0; i < 4; i++) EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 0;
+    
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_POW, "**", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_FOR, "for", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL, "=", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
+    token_list_add(tokens, initialize_token(TOKEN_SEMICOLON, ";", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_SEMICOLON, ";", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_INCREMENT, "++", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_RIGHT, ")", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+
+    
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* expr = parse(pctx);
+    printf("--------%d", pctx->current);
+    CU_ASSERT_EQUAL(pctx->current, 6);
+
+}
 
 int main(void) {
 
@@ -514,7 +558,7 @@ int main(void) {
     /* Parse suite */
     CU_pSuite parse_suite = create_suite("parse suite", set_up, clean_up);
     CU_add_test(parse_suite, "parse default", test_parse_default);
-
+    CU_add_test(parse_suite, "parse synchronize error", test_parse_synchronize);
     
     
     // run the tests
