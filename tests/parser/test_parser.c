@@ -335,6 +335,60 @@ void test_equality_two_operators(void) {
     CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 4, 0.001);
 }
 
+void test_expression_comma(void) {
+    /*
+    Token Stream: 1 == 2, 4 < 0 EOF
+    */
+    tokens = token_list_initialize();
+    literal_s* two = initialize_literal(LITERAL_DOUBLE);
+    two->value.double_value = 2;
+    literal_s* one = initialize_literal(LITERAL_DOUBLE);
+    one->value.double_value = 1;
+    literal_s* four = initialize_literal(LITERAL_DOUBLE);
+    four->value.double_value = 4;
+    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
+    zero->value.double_value = 0;
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
+    token_list_add(tokens, initialize_token(TOKEN_COMMA, ",", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
+    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
+    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
+
+    pctx = initialize_parser_context(tokens);
+
+    expr_s* expr_comma = expression(pctx);
+    CU_ASSERT_EQUAL(expr_comma->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(expr_comma->expression.binary.op->type, TOKEN_COMMA);
+
+    expr_s* expr_equal = expr_comma->expression.binary.left;
+    CU_ASSERT_EQUAL(expr_equal->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(expr_equal->expression.binary.op->type, TOKEN_EQUAL_EQUAL);
+
+    expr_s* expr_one = expr_equal->expression.binary.left;
+    CU_ASSERT_EQUAL(expr_one->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(expr_one->expression.literal.payload.number, 1, 0.001);
+
+    expr_s* expr_two = expr_equal->expression.binary.right;
+    CU_ASSERT_EQUAL(expr_two->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(expr_two->expression.literal.payload.number, 2, 0.001);
+
+    expr_s* expr_less = expr_comma->expression.binary.right;
+    CU_ASSERT_EQUAL(expr_less->type, EXPR_BINARY);
+    CU_ASSERT_EQUAL(expr_less->expression.binary.op->type, TOKEN_LESS);
+
+    expr_s* expr_four = expr_less->expression.binary.left;
+    CU_ASSERT_EQUAL(expr_four->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(expr_four->expression.literal.payload.number, 4, 0.001);
+
+    expr_s* expr_zero = expr_less->expression.binary.right;
+    CU_ASSERT_EQUAL(expr_zero->type, EXPR_LITERAL);
+    CU_ASSERT_DOUBLE_EQUAL(expr_zero->expression.literal.payload.number, 0, 0.001);
+
+}
+
 void test_synchronize_previous_token_is_terminator(void) {
     /*
     Token Stream: \n 1 + 2 EOF
@@ -469,7 +523,7 @@ void test_parse_default(void) {
 
 void test_parse_synchronize(void) {
     /*
-    Token Stream: (1 ** 2 == 1 \n for(i = 0; i < 4; i++) EOF
+    Token Stream: (1 <= 2 == 1 \n for(i = 0; i < 4; i++) EOF
     */
     tokens = token_list_initialize();
     literal_s* two = initialize_literal(LITERAL_DOUBLE);
@@ -483,7 +537,7 @@ void test_parse_synchronize(void) {
     
     token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_POW, "**", NULL, 1));
+    token_list_add(tokens, initialize_token(TOKEN_LESS_EQUAL, "<=", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
     token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
     token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
@@ -507,7 +561,6 @@ void test_parse_synchronize(void) {
     pctx = initialize_parser_context(tokens);
 
     expr_s* expr = parse(pctx);
-    printf("--------%d", pctx->current);
     CU_ASSERT_EQUAL(pctx->current, 6);
 
 }
@@ -548,6 +601,10 @@ int main(void) {
     /* Equality suite */
     CU_pSuite equality_suite = create_suite("equality suite", NULL, clean_up);
     CU_add_test(equality_suite, "equality two operators", test_equality_two_operators);
+
+    /* Expression suite */
+    CU_pSuite expression_suite = create_suite("expression suite", NULL, clean_up);
+    CU_add_test(expression_suite, "comma separated expressions", test_expression_comma);
 
     /* Synchronize Suite */
     CU_pSuite synchronize_suite = create_suite("synchronize suite", NULL, clean_up);

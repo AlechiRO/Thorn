@@ -144,7 +144,14 @@ Parse an expression
 @return Pointer to expression struct
 */
 expr_s* expression(parser_context_s* pctx) {
-    return equality(pctx);
+    expr_s* expr = equality(pctx);
+
+    while(p_match(pctx, (token_type_e[]){TOKEN_COMMA}, 1)) {
+        token_s* op = p_previous(pctx);
+        expr_s* right = equality(pctx);
+        expr = initialize_expr_binary(expr, op, right, pctx->arena);
+    }
+    return expr;
 }
 
 /*
