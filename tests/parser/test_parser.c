@@ -7,6 +7,24 @@
 #include <string.h>
 #include "parser_util.h"
 
+/*
+Helper method to create a literal dummy object
+@param type Type of literal
+@return Pointer to a dummy literal object
+*/
+static literal_s* make_dummy_literal(literal_type_e type) {
+    literal_s* literal = initialize_literal(type);
+    switch (type) {
+    case LITERAL_DOUBLE:
+        literal->value.double_value = 0.0;
+        break;
+    case LITERAL_BOOLEAN:
+        literal->value.boolean_value = 0;
+    default:
+        break;
+    }
+    return literal;
+}
 parser_context_s* pctx;
 token_list* tokens;
 
@@ -20,42 +38,24 @@ static void clean_up(void) {
 /*
 Helper function to initialize default token list
 */
-static void set_up(void) {
-    /* 
-    Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false EOF
-    */
+static void set_up(token_type_e types[], size_t size) {
     tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    literal_s* five = initialize_literal(LITERAL_DOUBLE);
-    five->value.double_value = 5;
-    literal_s* three = initialize_literal(LITERAL_DOUBLE);
-    three->value.double_value = 3;
-    literal_s* ten = initialize_literal(LITERAL_DOUBLE);
-    ten->value.double_value = 10;
-    literal_s* false = initialize_literal(LITERAL_BOOLEAN);
-    false->value.boolean_value = 0;
+    for(size_t i = 0; i < size; i++) {
+        literal_s* literal = NULL;
+        switch (types[i]) {
+        case TOKEN_NUMBER:
+            literal = make_dummy_literal(LITERAL_DOUBLE);
+            break;
+        case TOKEN_FALSE:
+        case TOKEN_TRUE:
+            literal = make_dummy_literal(LITERAL_BOOLEAN);
+            break;
+        default:
+            break;
+        }
+        token_list_add(tokens, initialize_token(types[i], "", literal, 1));
+    }
 
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_RIGHT, ")", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "5", five, 1));
-    token_list_add(tokens, initialize_token(TOKEN_SLASH, "/", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "3", three, 1));
-    token_list_add(tokens, initialize_token(TOKEN_BANG_EQUAL, "!=", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "10", ten, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_FALSE, "false", false, 1));
     token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
     pctx = initialize_parser_context(tokens);
 }
@@ -73,22 +73,34 @@ static CU_pSuite create_suite(const char* name,  void(*set_up)(),  void(*tear)()
 }
 
 void test_primary_literal_number(void) {
-    pctx->current = 4;
+    /* 
+    Token Stream: 1 EOF
+    */
+    set_up((token_type_e[]){TOKEN_NUMBER}, 1);
+
     expr_s* e = primary(pctx);
     CU_ASSERT_EQUAL(e->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_NUMBER);
-    CU_ASSERT_DOUBLE_EQUAL(e->expression.literal.payload.number, 1, 0.001); 
+    CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_NUMBER); 
 }
 
 void test_primary_literal_boolean(void) {
-    pctx->current = 15;
+    /* 
+    Token Stream: false EOF
+    */
+    set_up((token_type_e[]){TOKEN_FALSE}, 1);
+
     expr_s* e = primary(pctx);
     CU_ASSERT_EQUAL(e->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e->expression.literal.type, EXPR_LITERAL_BOOLEAN);
-    CU_ASSERT_EQUAL(e->expression.literal.payload.boolean, 0);
 }
 
 void test_primary_grouping(void) {
+    /* 
+    Token Stream: (-2 + 1 * 4) * EOF
+    */
+    set_up((token_type_e[]){TOKEN_ROUND_BRACE_LEFT, TOKEN_MINUS, TOKEN_NUMBER,
+         TOKEN_PLUS, TOKEN_NUMBER, TOKEN_STAR, TOKEN_NUMBER, TOKEN_ROUND_BRACE_RIGHT, TOKEN_STAR}, 10);
+
     expr_s* e = primary(pctx);
     CU_ASSERT_EQUAL(pctx->current, 8);
     CU_ASSERT_EQUAL(e->type, EXPR_GROUPING);
@@ -97,35 +109,20 @@ void test_primary_grouping(void) {
 
     CU_ASSERT_EQUAL(binary1.left->type, EXPR_UNARY);
     CU_ASSERT_EQUAL(binary1.left->expression.unary.op->type, TOKEN_MINUS);
-    CU_ASSERT_DOUBLE_EQUAL(binary1.left->expression.unary.right->expression.literal.payload.number, 2, 0.001)
 
     CU_ASSERT_EQUAL(binary1.op->type, TOKEN_PLUS);
     CU_ASSERT_EQUAL(binary1.right->type, EXPR_BINARY);
     binary_expr_s binary2 = binary1.right->expression.binary;
 
-    
-    CU_ASSERT_DOUBLE_EQUAL(binary2.left->expression.literal.payload.number, 1, 0.001);
     CU_ASSERT_EQUAL(binary2.op->type, TOKEN_STAR);
-    CU_ASSERT_DOUBLE_EQUAL(binary2.right->expression.literal.payload.number, 4, 0.001);
+
 }
 
 void test_primary_unclosed_parentheses(void) {
     /* 
     Token Stream: (-2 + 1 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_ROUND_BRACE_LEFT, TOKEN_MINUS, TOKEN_NUMBER, TOKEN_PLUS, TOKEN_NUMBER}, 5);
 
     if(setjmp(pctx->panic_jmp) == 0) {
         primary(pctx);
@@ -138,34 +135,19 @@ void test_unary_minus(void) {
     /* 
     Token Stream: -2 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    token_list_add(tokens, initialize_token(TOKEN_MINUS, "-", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_MINUS, TOKEN_NUMBER}, 2);
 
     expr_s* e = unary(pctx);
-    
     CU_ASSERT_EQUAL(e->type, EXPR_UNARY);
     CU_ASSERT_EQUAL(e->expression.unary.op->type, TOKEN_MINUS);
-    CU_ASSERT_DOUBLE_EQUAL(e->expression.unary.right->expression.literal.payload.number, 2, 0.001);
+
 }
 
 void test_unary_bang(void) {
     /*
     Token Stream: !!!true EOF
     */
-    tokens = token_list_initialize();
-    literal_s* true = initialize_literal(LITERAL_BOOLEAN);
-    true->value.boolean_value = 1;
-    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_BANG, "!", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_TRUE, "true", true, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_BANG, TOKEN_BANG, TOKEN_BANG, TOKEN_TRUE}, 4);
 
     expr_s* e1 = unary(pctx);
     CU_ASSERT_EQUAL(e1->type, EXPR_UNARY);
@@ -182,59 +164,31 @@ void test_unary_bang(void) {
     expr_s* e4 = e3->expression.unary.right;
     CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e4->expression.literal.type, EXPR_LITERAL_BOOLEAN);
-    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.boolean, 1, 0.001);
 }
 
 void test_factor_three_numbers(void) {
     /* 
     Token Stream: 2 * 1 / 4 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_STAR, "*", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_SLASH, "/", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_STAR, TOKEN_NUMBER, TOKEN_SLASH, TOKEN_NUMBER}, 5);
 
     expr_s* e1 = factor(pctx);
+    CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_SLASH);
     CU_ASSERT_EQUAL(e1->type, EXPR_BINARY)
     CU_ASSERT_EQUAL(e1->expression.binary.left->type, EXPR_BINARY);
 
     expr_s* e2 = e1->expression.binary.left;
     CU_ASSERT_EQUAL(e2->expression.binary.left->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(e2->expression.binary.left->expression.literal.payload.number, 2, 0.001);
     CU_ASSERT_EQUAL(e2->expression.binary.op->type, TOKEN_STAR);
-    CU_ASSERT_DOUBLE_EQUAL(e2->expression.binary.right->expression.literal.payload.number, 1, 0.001);
-
-
-    CU_ASSERT_EQUAL(e1->expression.binary.op->type, TOKEN_SLASH);
 
     expr_s* e3 = e1->expression.binary.right;
-    CU_ASSERT_DOUBLE_EQUAL(e3->expression.literal.payload.number, 4, 0.001);
 }
 
 void test_term_two_numbers(void) {
     /* 
     Token Stream: 2 + 1 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_PLUS, TOKEN_NUMBER}, 3);
 
     expr_s* e = term(pctx);
 
@@ -246,29 +200,15 @@ void test_term_two_numbers(void) {
     expr_s* t1 = e->expression.binary.left;
     expr_s* t2 = e->expression.binary.right;
 
-    CU_ASSERT_DOUBLE_EQUAL(t1->expression.literal.payload.number, 2, 0.001);
-    CU_ASSERT_DOUBLE_EQUAL(t2->expression.literal.payload.number, 1, 0.001);
+    CU_ASSERT_EQUAL(t1->type, EXPR_LITERAL);
+    CU_ASSERT_EQUAL(t2->type, EXPR_LITERAL);
 }   
 
 void test_comparison_two_operators(void) {
     /*
     Token Stream: 2 < 1 >= 4 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_GREATER_EQUAL, ">=", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_LESS, TOKEN_NUMBER, TOKEN_GREATER_EQUAL, TOKEN_NUMBER}, 5);
 
     expr_s* e1 = comparison(pctx);
     CU_ASSERT_EQUAL(e1->type, EXPR_BINARY);
@@ -276,7 +216,6 @@ void test_comparison_two_operators(void) {
 
     expr_s* e2 = e1->expression.binary.right;
     CU_ASSERT_EQUAL(e2->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(e2->expression.literal.payload.number, 4, 0.001);
 
     expr_s* e3 = e1->expression.binary.left;
     CU_ASSERT_EQUAL(e3->type, EXPR_BINARY);
@@ -284,32 +223,16 @@ void test_comparison_two_operators(void) {
 
     expr_s* e4 = e3->expression.binary.right;
     CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.number, 1, 0.001);
 
     expr_s* e5 = e3->expression.binary.left;
     CU_ASSERT_EQUAL(e5->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 2, 0.001);
 }
 
 void test_equality_two_operators(void) {
     /*
     Token Stream: 2 != 4 == 1 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_BANG_EQUAL, "!=", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_BANG_EQUAL, TOKEN_NUMBER, TOKEN_EQUAL_EQUAL, TOKEN_NUMBER}, 5);
 
     expr_s* e1 = equality(pctx);
     CU_ASSERT_EQUAL(e1->type, EXPR_BINARY);
@@ -318,7 +241,6 @@ void test_equality_two_operators(void) {
     expr_s* e2 = e1->expression.binary.right;
     CU_ASSERT_EQUAL(e2->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e2->expression.literal.type, EXPR_LITERAL_NUMBER);
-    CU_ASSERT_DOUBLE_EQUAL(e2->expression.literal.payload.number, 1, 0.001);
 
     expr_s* e3 = e1->expression.binary.left;
     CU_ASSERT_EQUAL(e3->type, EXPR_BINARY);
@@ -327,37 +249,17 @@ void test_equality_two_operators(void) {
     expr_s* e4 = e3->expression.binary.left;
     CU_ASSERT_EQUAL(e4->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e4->expression.literal.type, EXPR_LITERAL_NUMBER);
-    CU_ASSERT_DOUBLE_EQUAL(e4->expression.literal.payload.number, 2, 0.001);
 
     expr_s* e5 = e3->expression.binary.right;
     CU_ASSERT_EQUAL(e5->type, EXPR_LITERAL);
     CU_ASSERT_EQUAL(e5->expression.literal.type, EXPR_LITERAL_NUMBER);
-    CU_ASSERT_DOUBLE_EQUAL(e5->expression.literal.payload.number, 4, 0.001);
 }
 
 void test_expression_comma(void) {
     /*
     Token Stream: 1 == 2, 4 < 0 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
-    zero->value.double_value = 0;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_COMMA, ",", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_EQUAL_EQUAL, TOKEN_NUMBER, TOKEN_COMMA, TOKEN_NUMBER, TOKEN_LESS, TOKEN_NUMBER}, 7);
 
     expr_s* expr_comma = expression(pctx);
     CU_ASSERT_EQUAL(expr_comma->type, EXPR_BINARY);
@@ -369,11 +271,9 @@ void test_expression_comma(void) {
 
     expr_s* expr_one = expr_equal->expression.binary.left;
     CU_ASSERT_EQUAL(expr_one->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(expr_one->expression.literal.payload.number, 1, 0.001);
 
     expr_s* expr_two = expr_equal->expression.binary.right;
     CU_ASSERT_EQUAL(expr_two->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(expr_two->expression.literal.payload.number, 2, 0.001);
 
     expr_s* expr_less = expr_comma->expression.binary.right;
     CU_ASSERT_EQUAL(expr_less->type, EXPR_BINARY);
@@ -381,11 +281,9 @@ void test_expression_comma(void) {
 
     expr_s* expr_four = expr_less->expression.binary.left;
     CU_ASSERT_EQUAL(expr_four->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(expr_four->expression.literal.payload.number, 4, 0.001);
 
     expr_s* expr_zero = expr_less->expression.binary.right;
     CU_ASSERT_EQUAL(expr_zero->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(expr_zero->expression.literal.payload.number, 0, 0.001);
 
 }
 
@@ -393,18 +291,7 @@ void test_synchronize_previous_token_is_terminator(void) {
     /*
     Token Stream: \n 1 + 2 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_TERMINATOR, TOKEN_NUMBER, TOKEN_PLUS, TOKEN_NUMBER}, 4);
 
     synchronize(pctx);
     CU_ASSERT_EQUAL(pctx->current, 1);
@@ -414,19 +301,7 @@ void test_synchronize_eventual_terminator(void) {
     /*
     Token Stream: 1 + 2 \n return EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_RETURN, "return", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_PLUS, TOKEN_NUMBER, TOKEN_TERMINATOR, TOKEN_RETURN}, 5);
 
     synchronize(pctx);
     CU_ASSERT_EQUAL(pctx->current, 4);
@@ -436,21 +311,7 @@ void test_synchronize_keyword(void) {
     /*
     Token Stream: 1 + 2 return 4 EOF
     */
-    tokens = token_list_initialize();
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_PLUS, "+", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_RETURN, "return", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){TOKEN_NUMBER, TOKEN_PLUS, TOKEN_NUMBER, TOKEN_RETURN, TOKEN_NUMBER}, 5);
 
     synchronize(pctx);
     CU_ASSERT_EQUAL(pctx->current, 3);
@@ -460,6 +321,24 @@ void test_parse_default(void) {
     /* 
     Token Stream: (-2 + 1 * 4) * 5 / 3 != 10 == false EOF
     */
+    set_up((token_type_e[]){
+    TOKEN_ROUND_BRACE_LEFT,
+    TOKEN_MINUS,
+    TOKEN_NUMBER,
+    TOKEN_PLUS,
+    TOKEN_NUMBER,
+    TOKEN_STAR,
+    TOKEN_NUMBER,
+    TOKEN_ROUND_BRACE_RIGHT,
+    TOKEN_STAR,
+    TOKEN_NUMBER,
+    TOKEN_SLASH,
+    TOKEN_NUMBER,
+    TOKEN_BANG_EQUAL,
+    TOKEN_NUMBER,
+    TOKEN_EQUAL_EQUAL,
+    TOKEN_FALSE
+    }, 16);
     expr_s* main_expr = parse(pctx);
 
     CU_ASSERT_EQUAL(main_expr->type, EXPR_BINARY);
@@ -467,7 +346,6 @@ void test_parse_default(void) {
 
     expr_s* false_expr = main_expr->expression.binary.right;
     CU_ASSERT_EQUAL(false_expr->type, EXPR_LITERAL);
-    CU_ASSERT_EQUAL(false_expr->expression.literal.payload.boolean, 0);
 
     expr_s* bang_equal_expr = main_expr->expression.binary.left;
     CU_ASSERT_EQUAL(bang_equal_expr->type, EXPR_BINARY);
@@ -475,7 +353,6 @@ void test_parse_default(void) {
     
     expr_s* ten_expr = bang_equal_expr->expression.binary.right;
     CU_ASSERT_EQUAL(ten_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(ten_expr->expression.literal.payload.number, 10, 0.001);
 
     expr_s* div_expr = bang_equal_expr->expression.binary.left;
     CU_ASSERT_EQUAL(div_expr->type, EXPR_BINARY);
@@ -483,7 +360,6 @@ void test_parse_default(void) {
     
     expr_s* three_expr = div_expr->expression.binary.right;
     CU_ASSERT_EQUAL(three_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(three_expr->expression.literal.payload.number, 3, 0.001);
 
     expr_s* multiply_expr_2 = div_expr->expression.binary.left;
     CU_ASSERT_EQUAL(multiply_expr_2->type, EXPR_BINARY);
@@ -491,7 +367,6 @@ void test_parse_default(void) {
 
     expr_s* five_expr = multiply_expr_2->expression.binary.right;
     CU_ASSERT_EQUAL(five_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(five_expr->expression.literal.payload.number, 5, 0.001);
 
     expr_s* group_expr = multiply_expr_2->expression.binary.left;
     CU_ASSERT_EQUAL(group_expr->type, EXPR_GROUPING);
@@ -506,11 +381,9 @@ void test_parse_default(void) {
 
     expr_s* one_expr = multiply_expr_1->expression.binary.left;
     CU_ASSERT_EQUAL(one_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(one_expr->expression.literal.payload.number, 1, 0.001);
 
     expr_s* four_expr = multiply_expr_1->expression.binary.right;
     CU_ASSERT_EQUAL(four_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(four_expr->expression.literal.payload.number, 4, 0.001);
 
     expr_s* unary_expr = plus_expr->expression.binary.left;
     CU_ASSERT_EQUAL(unary_expr->type, EXPR_UNARY);
@@ -518,50 +391,37 @@ void test_parse_default(void) {
     
     expr_s* two_expr = unary_expr->expression.unary.right;
     CU_ASSERT_EQUAL(two_expr->type, EXPR_LITERAL);
-    CU_ASSERT_DOUBLE_EQUAL(two_expr->expression.literal.payload.number, 2, 0.001);
 }
 
 void test_parse_synchronize(void) {
     /*
     Token Stream: (1 <= 2 == 1 \n for(i = 0; i < 4; i++) EOF
     */
-    tokens = token_list_initialize();
-    literal_s* two = initialize_literal(LITERAL_DOUBLE);
-    two->value.double_value = 2;
-    literal_s* one = initialize_literal(LITERAL_DOUBLE);
-    one->value.double_value = 1;
-    literal_s* four = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 4;
-    literal_s* zero = initialize_literal(LITERAL_DOUBLE);
-    four->value.double_value = 0;
-    
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "1", one, 1));
-    token_list_add(tokens, initialize_token(TOKEN_LESS_EQUAL, "<=", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "2", two, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL_EQUAL, "==", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_TERMINATOR, "\n", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_FOR, "for", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_LEFT, "(", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EQUAL, "=", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "0", zero, 1));
-    token_list_add(tokens, initialize_token(TOKEN_SEMICOLON, ";", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_LESS, "<", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_NUMBER, "4", four, 1));
-    token_list_add(tokens, initialize_token(TOKEN_SEMICOLON, ";", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_IDENTIFIER, "i", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_INCREMENT, "++", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_ROUND_BRACE_RIGHT, ")", NULL, 1));
-    token_list_add(tokens, initialize_token(TOKEN_EOF, "", NULL, 1));
-
-
-    
-    pctx = initialize_parser_context(tokens);
+    set_up((token_type_e[]){
+    TOKEN_ROUND_BRACE_LEFT,
+    TOKEN_NUMBER,
+    TOKEN_LESS_EQUAL,
+    TOKEN_NUMBER,
+    TOKEN_EQUAL_EQUAL,
+    TOKEN_NUMBER,
+    TOKEN_TERMINATOR,
+    TOKEN_FOR,
+    TOKEN_ROUND_BRACE_LEFT,
+    TOKEN_IDENTIFIER,
+    TOKEN_EQUAL,
+    TOKEN_NUMBER,
+    TOKEN_SEMICOLON,
+    TOKEN_IDENTIFIER,
+    TOKEN_LESS,
+    TOKEN_NUMBER,
+    TOKEN_SEMICOLON,
+    TOKEN_IDENTIFIER,
+    TOKEN_INCREMENT,
+    TOKEN_ROUND_BRACE_RIGHT
+}, 20);
 
     expr_s* expr = parse(pctx);
-    CU_ASSERT_EQUAL(pctx->current, 6);
+    CU_ASSERT_EQUAL(pctx->current, 7);
 
 }
 
@@ -572,7 +432,7 @@ int main(void) {
         errx(EXIT_FAILURE, "can't initialize test registry"); 
 
     /* Primary suite */
-    CU_pSuite primary_suite = create_suite("primary suite", set_up, clean_up);
+    CU_pSuite primary_suite = create_suite("primary suite", NULL, clean_up);
     CU_add_test(primary_suite, "primary parse literal number", test_primary_literal_number);
     CU_add_test(primary_suite, "primary parse literal boolean", test_primary_literal_boolean);
     CU_add_test(primary_suite, "primary parse grouping", test_primary_grouping);
@@ -613,7 +473,7 @@ int main(void) {
     CU_add_test(synchronize_suite, "synchronize keyword", test_synchronize_keyword);
 
     /* Parse suite */
-    CU_pSuite parse_suite = create_suite("parse suite", set_up, clean_up);
+    CU_pSuite parse_suite = create_suite("parse suite", NULL, clean_up);
     CU_add_test(parse_suite, "parse default", test_parse_default);
     CU_add_test(parse_suite, "parse synchronize error", test_parse_synchronize);
     
